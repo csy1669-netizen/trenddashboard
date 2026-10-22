@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TREND DASHBOARD · MLB</title>
+<meta name="description" content="MLB MKT 콘텐츠 트렌드 전광판 — 인스타그램 실제 콘텐츠로 검증한 2030 트렌드와 유행 단계">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--color-bg:#ffffff;--color-fg:#111111;--color-panel:#ffffff;--color-fg-muted:#6b6b6b;--color-border-line:#e5e7eb;--color-ok:#2e7d4f;--color-warn:#b7791f;--color-bad:#c0392b;
+--font-anthropic-sans:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;--font-anthropic-serif:var(--font-anthropic-sans);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--color-bg:#121212;--color-fg:#f2f2f0;--color-panel:#121212;--color-fg-muted:#a3a3a3;--color-border-line:#2c2c2c;color-scheme:dark}}
+html,body{margin:0;background:var(--color-bg);color:var(--color-fg)}
+#dash-root{padding:clamp(20px,3vw,40px) clamp(16px,4vw,48px) 64px}
+.td{--td-font:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif}
+[hidden]{display:none!important}
+</style>
+<script src="assets/d3.v7.8.5.min.js"></script>
+<script>
+/* GitHub Pages용 대시보드 런타임 — data/*.json을 읽어 페이지 코드에 넘김 */
+window.dash = (function () {
+  const files = {trends: 'data/trends.json', formats: 'data/formats.json', pipeline: 'data/pipeline.json'};
+  const D = {}, S = {}, calcs = {}, subs = [];
+  let P = {category: null, format: null, stage: null};
+  const emit = () => { Object.values(calcs).forEach((c) => { c.cache = undefined; }); subs.forEach((f) => { try { f(); } catch (e) { console.error(e); } }); };
+  Object.entries(files).forEach(([id, url]) => {
+    S[id] = 'loading';
+    fetch(url + '?v=' + Date.now()).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then((j) => { D[id] = Array.isArray(j) ? j : (j.rows || j.data || j.results || []); S[id] = 'ok'; emit(); })
+      .catch((e) => { S[id] = 'error'; console.error(url, e); emit(); });
+  });
+  function data(id) {
+    if (files[id]) return {status: S[id], data: D[id] || [], refreshing: false, meta: [], columns: D[id] && D[id][0] ? Object.keys(D[id][0]) : []};
+    const c = calcs[id]; if (!c) return {status: 'missing', data: []};
+    const ins = c.inputs.map(data); const bad = ins.find((x) => x.status !== 'ok');
+    if (bad) return {status: bad.status, data: []};
+    if (c.cache === undefined) { try { c.cache = c.fn(...ins.map((x) => x.data)); } catch (e) { console.error(id, e); return {status: 'error', data: [], message: String(e)}; } }
+    return {status: 'ok', data: c.cache};
+  }
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => subs.forEach((f) => f()), 150); });
+  return {
+    colors: ['#111C38', '#BF0D3E', '#44568A', '#8D9AC0', '#5E5E5E', '#9E9E9E', '#CDD3E4', '#E5E7EB'],
+    calc: (id, o) => { calcs[id] = Object.assign({}, o); },
+    data, onData: (f) => { subs.push(f); f(); },
+    params: () => Object.assign({}, P),
+    setParams: (o) => { Object.assign(P, o); subs.forEach((f) => f()); },
+    resetParams: () => { P = {category: null, format: null, stage: null}; subs.forEach((f) => f()); },
+    setLink: (n) => { try { history.replaceState(null, '', '#' + n); } catch (e) {} },
+    refresh: () => {}, loader: () => {},
+  };
+})();
+</script>
+</head>
+<body>
+<div id="dash-root">
+<style>
+/* MLB 브랜드 규칙(mlb-korea.com 추출): Pretendard · 흑백 모노톤 · 제목 36/400 · 본문 16/14/12 · 굵기 400/700 · 카드 라운드 24/18 · 필 버튼 99 · 네이비 #111C38 */
+.td{
+  --td-font:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',var(--font-anthropic-sans),sans-serif;
+  --td-ink:var(--color-fg);--td-paper:var(--color-bg);
+  --td-surface:color-mix(in srgb,var(--color-fg) 3.5%,var(--color-bg));
+  --td-surface-2:color-mix(in srgb,var(--color-fg) 7%,var(--color-bg));
+  --td-line:color-mix(in srgb,var(--color-fg) 11%,var(--color-bg));
+  --td-mute:color-mix(in srgb,var(--color-fg) 56%,var(--color-bg));
+  --td-track:color-mix(in srgb,var(--color-fg) 9%,var(--color-bg));
+  --td-early:#BF0D3E;--td-active:#111C38;--td-past:#A6A6A6;
+  --td-insuf:repeating-linear-gradient(135deg,#9E9E9E 0 2px,transparent 2px 5px);--td-insuf-line:#9E9E9E;
+  --td-c1:#111C38;--td-c2:#44568A;--td-c3:#8D9AC0;--td-c4:#CDD3E4;
+  --td-c1-ink:#fff;--td-c2-ink:#fff;--td-c3-ink:#111C38;--td-c4-ink:#111C38;
+  --td-r-lg:24px;--td-r-md:18px;--td-pill:99px;
+  display:grid;gap:28px;font-family:var(--td-font);color:var(--td-ink);max-width:1280px;margin-inline:auto;letter-spacing:-.01em;
+  -webkit-font-smoothing:antialiased
+}
+.td[data-tone="dark"]{
+  --td-early:#FF5C77;--td-active:#A9BDF2;--td-past:#707070;
+  --td-insuf:repeating-linear-gradient(135deg,#7C7C7C 0 2px,transparent 2px 5px);--td-insuf-line:#7C7C7C;
+  --td-c1:#D3DDF7;--td-c2:#98ACDF;--td-c3:#5A6FA6;--td-c4:#33426B;
+  --td-c1-ink:#111C38;--td-c2-ink:#111C38;--td-c3-ink:#fff;--td-c4-ink:#fff
+}
+/* 반전 스코어보드 안에서는 반대 톤 색을 씀 */
+.td[data-tone="light"] .td-score{--td-early:#FF5C77;--td-active:#A9BDF2;--td-past:#8A8A8A;--td-insuf:repeating-linear-gradient(135deg,#8A8A8A 0 2px,transparent 2px 5px)}
+.td[data-tone="dark"] .td-score{--td-early:#BF0D3E;--td-active:#111C38;--td-past:#9A9A9A;--td-insuf:repeating-linear-gradient(135deg,#9A9A9A 0 2px,transparent 2px 5px)}
+
+/* 머리 */
+.td-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-top:4px}
+.td-head h1{margin:0;font-family:var(--td-font);font-weight:800;font-size:clamp(2rem,4.4vw,3rem);line-height:1;letter-spacing:-.035em}
+.td-take{margin:12px 0 0;color:var(--td-mute);font-size:16px;line-height:1.55;max-width:62ch}
+.td-upd{font-size:13px;color:var(--td-mute);font-variant-numeric:tabular-nums;padding:8px 14px;border-radius:var(--td-pill);background:var(--td-surface)}
+
+/* 탭 — 몰 카테고리 필처럼 */
+.td-tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:3;padding:10px 0;background:var(--td-paper);border-bottom:1px solid var(--td-line)}
+.td-tab{font:inherit;font-size:14px;font-weight:700;letter-spacing:0;color:var(--td-ink);background:var(--td-paper);border:1px solid var(--td-line);border-radius:var(--td-pill);padding:9px 18px;cursor:pointer;transition:background-color .15s,color .15s,border-color .15s}
+.td-tab:hover{border-color:var(--td-ink)}
+.td-tab[aria-selected="true"]{color:var(--td-paper);background:var(--td-ink);border-color:var(--td-ink)}
+.td-tab:focus-visible,.td-chip:focus-visible,.td-ctrl select:focus-visible,.td-ctrl input:focus-visible,.td-tbl th button:focus-visible{outline:2px solid var(--td-early);outline-offset:2px}
+
+.td-page{display:grid;gap:20px}
+.td-page[hidden]{display:none}
+.td-card{background:var(--td-surface);border:0;border-radius:var(--td-r-lg);padding:clamp(18px,3vw,32px);display:grid;gap:14px;min-width:0}
+.td-card h2{margin:0;font-size:clamp(1.375rem,2.4vw,1.75rem);font-weight:400;letter-spacing:-.025em;line-height:1.2}
+.td-note{margin:0;font-size:13px;color:var(--td-mute);line-height:1.6;max-width:78ch}
+
+/* 필터 */
+.td-ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.td-ctrl label{font-size:12px;font-weight:700;color:var(--td-mute);display:grid;gap:6px}
+.td-ctrl select,.td-ctrl input{font:inherit;font-size:14px;color:var(--td-ink);background:var(--td-surface-2);border:1px solid transparent;border-radius:var(--td-pill);padding:10px 16px;min-width:9rem}
+.td-ctrl select:hover,.td-ctrl input:hover{border-color:var(--td-line)}
+.td-chips{display:flex;flex-wrap:wrap;gap:6px}
+.td-chip{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--td-line);background:var(--td-paper);color:var(--td-ink);border-radius:var(--td-pill);padding:7px 14px;cursor:pointer;font-variant-numeric:tabular-nums}
+.td-chip:hover{border-color:var(--td-ink)}
+.td-chip[aria-pressed="true"]{background:var(--td-ink);color:var(--td-paper);border-color:var(--td-ink)}
+
+/* 스코어보드 — 이 페이지의 단 하나의 강한 요소 */
+.td-kpis.td-score{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--td-ink);color:var(--td-paper);border-radius:var(--td-r-lg);overflow:hidden;gap:0}
+.td-score .td-kpi{background:transparent;border:0;border-radius:0;padding:22px 24px 24px;display:grid;gap:6px;align-content:start;border-left:1px solid color-mix(in srgb,var(--color-bg) 16%,transparent)}
+.td-score .td-kpi:first-child{border-left:0}
+.td-score .k{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--td-paper)}
+.td-score .v{font-family:var(--td-font);font-weight:300;font-size:clamp(2.75rem,6vw,4.25rem);line-height:.95;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--td-paper)}
+.td-score .s{font-size:12px;color:color-mix(in srgb,var(--color-bg) 62%,transparent);line-height:1.45}
+@media (max-width:720px){.td-kpis.td-score{grid-template-columns:repeat(2,minmax(0,1fr))}.td-score .td-kpi:nth-child(3){border-left:0}.td-score .td-kpi:nth-child(n+3){border-top:1px solid color-mix(in srgb,var(--color-bg) 16%,transparent)}}
+
+.td-dot{width:.62rem;height:.62rem;border-radius:99px;display:inline-block;flex:none}
+.td-dot[data-st="측정 불충분"]{box-shadow:inset 0 0 0 1px var(--td-insuf-line)}
+.td-empty{font-size:13px;color:var(--td-mute);margin:0}
+
+/* 표 */
+.td-tbl{max-height:36rem;overflow:auto;background:var(--td-paper);border-radius:var(--td-r-md)}
+.td-tbl table{border-collapse:collapse;width:100%;min-width:74rem;font-size:13px}
+#rank-table td:nth-child(2){min-width:13rem}
+#rank-table td:nth-child(3),#format-table td:nth-child(2),#format-table td:nth-child(3){white-space:nowrap}
+#format-table td:nth-child(7){min-width:16rem}
+.td-tbl th,.td-tbl td{padding:12px 14px;border-bottom:1px solid var(--td-line);text-align:left;vertical-align:middle}
+.td-tbl tbody tr:last-child td{border-bottom:0}
+.td-tbl th{position:sticky;top:0;background:var(--td-paper);color:var(--td-mute);font-size:12px;font-weight:700;white-space:nowrap;z-index:1;border-bottom-color:var(--td-ink)}
+.td-tbl th button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.td-tbl th button:hover{color:var(--td-ink)}
+.td-tbl th button::after{content:" ↕";opacity:.45}
+.td-tbl td b{font-weight:700}
+.td-tbl td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.td-tbl tbody tr:hover td{background:var(--td-surface)}
+.td-tbl.click tr[data-key]{cursor:pointer}
+.td-ext{color:var(--td-ink);text-decoration:none;font-weight:700;border-bottom:1px solid var(--td-line)}
+.td-ext::before{content:"@"}
+.td-ext:hover{border-bottom-color:var(--td-ink)}
+
+/* 유행 단계 배지 — 초기·중은 채운 필, 지남은 테두리, 불충분은 점선 */
+.td-badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:var(--td-pill);white-space:nowrap;border:1px solid var(--td-line);color:var(--td-mute);line-height:1.4}
+.td-badge[data-st="유행 초기"]{background:var(--td-early);border-color:var(--td-early);color:#fff}
+.td-badge[data-st="유행 중"]{background:var(--td-active);border-color:var(--td-active);color:var(--td-active-ink,#fff)}
+.td[data-tone="dark"] .td-badge[data-st="유행 중"]{color:#111C38}
+.td[data-tone="dark"] .td-badge[data-st="유행 초기"]{color:#1A0007}
+.td-badge[data-st="유행 지남"]{color:var(--td-mute);border-color:var(--td-past)}
+.td-badge[data-st="측정 불충분"]{border-style:dashed;border-color:var(--td-insuf-line);color:var(--td-mute)}
+.td-badge.new{background:var(--td-ink);color:var(--td-paper);border-color:var(--td-ink);font-size:11px;padding:1px 8px}
+
+.td-pct{display:grid;grid-template-columns:3.5rem 2.8rem;gap:8px;align-items:center}
+.td-pct i{display:block;height:6px;border-radius:99px;background:var(--td-track);position:relative;overflow:hidden}
+.td-pct i span{position:absolute;inset:0 auto 0 0;border-radius:99px}
+.td-pct em{font-style:normal;font-variant-numeric:tabular-nums}
+.td-bar{height:12px;border-radius:99px;background:var(--td-track);overflow:hidden;display:flex;gap:2px;min-width:6rem}
+.td-bar span{display:block;height:100%}
+.td-stack{display:grid;gap:4px}
+.td-srow{display:grid;grid-template-columns:minmax(0,17rem) minmax(0,1fr) 4rem;gap:14px;align-items:center;font-size:13px;padding:8px 12px;border-radius:12px}
+.td-srow:hover{background:var(--td-paper)}
+.td-srow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.td-srow .nm .td-note{font-weight:400;display:inline}
+.td-srow .nm b{font-variant-numeric:tabular-nums;color:var(--td-mute);display:inline-block;min-width:2rem;font-weight:400}
+.td-srow .sv{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.td-legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12px;color:var(--td-mute)}
+.td-legend span{display:inline-flex;align-items:center;gap:7px}
+
+/* 분석 로직 — 실제 순서가 있는 5단계 */
+.td-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12.5rem),1fr));gap:10px}
+.td-step{border-radius:var(--td-r-md);background:var(--td-paper);padding:20px;display:grid;gap:8px;align-content:start}
+.td-step .no{font-size:12px;font-weight:700;color:var(--td-mute);font-variant-numeric:tabular-nums}
+.td-step > b{font-size:16px}
+.td-step .v{font-family:var(--td-font);font-size:2.25rem;font-weight:300;line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.td-step .t{font-size:12px;color:var(--td-mute);line-height:1.55}
+.td-weights{display:flex;height:2.75rem;border-radius:var(--td-pill);overflow:hidden;gap:2px}
+.td-weights div{display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:13px;font-weight:700;min-width:0}
+.td-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:10px}
+.td-rule{border-radius:var(--td-r-md);padding:16px 18px;display:grid;gap:8px;align-content:start;background:var(--td-paper)}
+.td-rule p{margin:0;font-size:13px;color:var(--td-mute);line-height:1.55}
+.td-loop{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:10px}
+.td-loop div{border:1px dashed var(--td-line);border-radius:var(--td-r-md);padding:16px 18px;font-size:13px;line-height:1.55;color:var(--td-mute)}
+.td-loop b{display:block;font-size:16px;font-weight:700;color:var(--td-ink);margin-bottom:4px}
+.td-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:20px}
+.td-fail{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--td-mute);min-height:6rem}
+.td-fail::before{content:"";width:.375rem;height:.375rem;border-radius:99px;background:var(--color-bad)}
+[data-dash-source-state=refreshing]{opacity:.5;transition:opacity .3s}
+[data-dash-source-state=empty]{color:transparent}
+@media (max-width:640px){.td-srow{grid-template-columns:minmax(0,9rem) minmax(0,1fr) 2.8rem;gap:8px;padding:8px 6px}.td-tab{padding:8px 14px;font-size:13px}}
+@media (prefers-reduced-motion:reduce){.td-tab{transition:none}}
+
+/* 로고 */
+.td-logo{display:block;height:22px;width:auto;color:var(--td-ink)}
+.td-brandrow{display:flex;align-items:center;gap:12px;margin-bottom:16px;font-size:13px;color:var(--td-mute)}
+.td-brandrow .sep{width:1px;height:14px;background:var(--td-line)}
+
+/* 표지 */
+.td-coverwrap{position:fixed;inset:0;z-index:70;overflow-y:auto;overscroll-behavior:contain;background:var(--td-ink);color:var(--td-paper)}
+.td-coverwrap[hidden]{display:none}
+.td-coverwrap.leaving{transform:translateY(-100%);transition:transform .6s cubic-bezier(.7,0,.2,1)}
+@media (prefers-reduced-motion:reduce){.td-coverwrap.leaving{transition:none}}
+.td-cover{position:relative;overflow:hidden;background:var(--td-ink);color:var(--td-paper);min-height:100dvh;box-sizing:border-box;padding:clamp(24px,4.5vw,64px) clamp(20px,5vw,80px);display:grid;grid-template-rows:auto 1fr auto auto;gap:clamp(24px,4vh,48px);isolation:isolate;max-width:1600px;margin-inline:auto}
+.td-cover .hero{display:grid;gap:22px;align-content:center}
+.td-home{all:unset;cursor:pointer;display:inline-flex;border-radius:6px}
+.td-home:hover .td-logo{opacity:.7}
+.td-home:focus-visible{outline:2px solid var(--td-early);outline-offset:4px}
+.td[data-tone="light"] .td-coverwrap{--td-early:#FF5C77;--td-active:#A9BDF2;--td-past:#8A8A8A}
+.td[data-tone="dark"] .td-coverwrap{--td-early:#BF0D3E;--td-active:#111C38;--td-past:#9A9A9A}
+.td-cover .top{display:flex;justify-content:space-between;align-items:center;gap:12px 20px;flex-wrap:wrap;font-size:13px;color:color-mix(in srgb,var(--color-bg) 66%,transparent)}
+.td-cover .td-logo{color:var(--td-paper);height:clamp(28px,3.4vw,40px)}
+.td-cover h2{margin:0;font-weight:800;font-size:clamp(3rem,min(11vw,14vh),9rem);line-height:.86;letter-spacing:-.055em;max-width:9ch}
+.td-cover .lede{margin:0;font-size:clamp(16px,1.7vw,20px);line-height:1.55;max-width:48ch;color:color-mix(in srgb,var(--color-bg) 80%,transparent)}
+.td-cover .lede b{color:var(--td-paper);font-weight:700}
+.td-cover .picks-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.td-cover .picks-h h3{margin:0;font-size:clamp(1.25rem,2.2vw,1.6rem);font-weight:400;letter-spacing:-.02em}
+.td-cover .picks-h span{font-size:13px;color:color-mix(in srgb,var(--color-bg) 62%,transparent)}
+.td-picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,14.5rem),1fr));gap:10px}
+.td-pick{font:inherit;text-align:left;color:var(--td-paper);background:color-mix(in srgb,var(--color-bg) 7%,var(--color-fg));border:1px solid color-mix(in srgb,var(--color-bg) 14%,transparent);border-radius:18px;padding:16px 18px;display:grid;gap:10px;cursor:pointer;transition:border-color .15s,transform .15s}
+.td-pick:hover{border-color:color-mix(in srgb,var(--color-bg) 55%,transparent);transform:translateY(-2px)}
+.td-pick .td-badge{justify-self:start}
+.td-pick .nm{font-size:17px;font-weight:700;line-height:1.3}
+.td-pick .fm{font-size:12px;color:color-mix(in srgb,var(--color-bg) 60%,transparent)}
+.td-pick .meter{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.td-pick .meter i{display:block;height:5px;border-radius:99px;background:color-mix(in srgb,var(--color-bg) 16%,transparent);overflow:hidden}
+.td-pick .meter i span{display:block;height:100%;background:var(--td-early);border-radius:99px}
+.td-cta{display:flex;flex-wrap:wrap;gap:10px}
+.td-cta{margin-top:6px}
+.td-cta button{font:inherit;font-size:clamp(16px,1.5vw,19px);font-weight:800;padding:clamp(15px,1.6vw,20px) clamp(28px,3vw,40px);border-radius:var(--td-pill);cursor:pointer;border:0;letter-spacing:-.01em;box-shadow:0 0 0 0 color-mix(in srgb,var(--color-bg) 35%,transparent);transition:transform .15s,box-shadow .2s}
+.td-cta button:hover{box-shadow:0 0 0 8px color-mix(in srgb,var(--color-bg) 14%,transparent)}
+.td-cta button:focus-visible{outline:2px solid var(--td-early);outline-offset:4px}
+.td-cta .pri{background:var(--td-paper);color:var(--td-ink)}
+.td-cta .sec{background:transparent;color:var(--td-paper);border-color:color-mix(in srgb,var(--color-bg) 30%,transparent)}
+.td-cta button:hover{transform:translateY(-1px)}
+.td-cover .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;font-size:12px;color:color-mix(in srgb,var(--color-bg) 56%,transparent);border-top:1px solid color-mix(in srgb,var(--color-bg) 14%,transparent);padding-top:18px}
+/* 야구공 실밥 — 표지의 단 하나의 장식 */
+.td-seam{position:absolute;z-index:-1;right:-12%;top:6%;width:min(40%,520px);aspect-ratio:1;pointer-events:none;color:var(--td-early)}
+.td-seam circle{fill:none;stroke:color-mix(in srgb,var(--color-bg) 9%,transparent);stroke-width:1.2}
+.td-seam path{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-dasharray:2 11}
+.td-seam .ln{stroke-dasharray:none;stroke-width:1.2;stroke:color-mix(in srgb,currentColor 55%,transparent)}
+@media (max-width:720px){.td-seam{right:-55%;top:-6%;width:110%;opacity:.35}}
+@media (prefers-reduced-motion:no-preference){
+  .td-cover.intro .td-seam path{animation:td-draw 1.6s cubic-bezier(.3,.7,.2,1) both}
+  .td-cover.intro .td-seam path:nth-of-type(2),.td-cover.intro .td-seam path:nth-of-type(4){animation-delay:.25s}
+  .td-cover.intro h2,.td-cover.intro .lede,.td-cover.intro .td-cta{animation:td-rise .7s cubic-bezier(.2,.8,.2,1) both}
+  .td-cover.intro .lede{animation-delay:.12s}.td-cover.intro .td-cta{animation-delay:.2s}
+}
+@keyframes td-draw{from{stroke-dashoffset:900;opacity:0}to{stroke-dashoffset:0;opacity:1}}
+@keyframes td-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* 클릭 가능한 스코어보드 */
+.td-score .td-kpi{cursor:pointer;transition:background-color .15s}
+.td-score .td-kpi:hover{background:color-mix(in srgb,var(--color-bg) 7%,transparent)}
+.td-score .td-kpi[aria-pressed="true"]{background:color-mix(in srgb,var(--color-bg) 13%,transparent)}
+.td-score .td-kpi[aria-pressed="true"] .k::after{content:"필터 적용 중";margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--td-paper);color:var(--td-ink)}
+.td-score .td-kpi:focus-visible{outline:2px solid var(--td-paper);outline-offset:-4px}
+.td-score .v.bump{animation:td-bump .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes td-bump{from{opacity:.2;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.td-score .v.bump{animation:none}}
+
+/* 행·막대 클릭 */
+#rank-table tbody tr{cursor:pointer}
+#rank-table tbody tr:focus-visible td{background:var(--td-surface-2)}
+.td-srow.click{cursor:pointer}
+.td-srow.click:focus-visible{outline:2px solid var(--td-early);outline-offset:1px}
+.td-hint{font-size:12px;color:var(--td-mute)}
+
+/* 툴팁 */
+.td-tip{position:fixed;z-index:60;pointer-events:none;background:var(--td-ink);color:var(--td-paper);font-size:12px;line-height:1.5;padding:9px 12px;border-radius:12px;max-width:260px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.td-tip.show{opacity:1;transform:none}
+.td-tip b{display:block;font-size:13px;margin-bottom:2px}
+
+/* 트렌드 상세 패널 */
+.td-scrim{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.38);opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}
+.td-scrim.open{opacity:1;visibility:visible;transition:opacity .2s}
+.td-drawer{position:fixed;top:0;right:0;bottom:0;z-index:51;width:min(460px,100%);background:var(--td-paper);color:var(--td-ink);border-radius:24px 0 0 24px;box-shadow:-30px 0 60px rgba(0,0,0,.2);overflow:auto;padding:26px clamp(18px,3vw,30px) 32px;display:grid;gap:20px;align-content:start;transform:translateX(104%);visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s .28s}
+.td-drawer.open{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.td-drawer,.td-scrim{transition:none}}
+.td-drawer .bar1{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.td-x{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--td-line);background:var(--td-paper);color:var(--td-ink);border-radius:99px;padding:7px 14px;cursor:pointer}
+.td-x:hover{border-color:var(--td-ink)}
+.td-drawer h3{margin:0;font-size:clamp(1.6rem,4vw,2.1rem);font-weight:800;letter-spacing:-.035em;line-height:1.1}
+.td-drawer .sub{font-size:13px;color:var(--td-mute);margin-top:6px}
+.td-dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--td-line);border-radius:18px;overflow:hidden}
+.td-dl div{background:var(--td-surface);padding:14px 14px 16px;display:grid;gap:4px}
+.td-dl dt{font-size:12px;color:var(--td-mute)}
+.td-dl dd{margin:0;font-size:22px;font-weight:300;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.td-sec{display:grid;gap:10px}
+.td-sec h4{margin:0;font-size:14px;font-weight:700}
+.td-big{display:grid;grid-template-columns:4.5rem 1fr 3rem;gap:10px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.td-big i{display:block;height:10px;border-radius:99px;background:var(--td-track);overflow:hidden}
+.td-big i span{display:block;height:100%;border-radius:99px}
+.td-post{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;background:var(--td-ink);color:var(--td-paper);text-decoration:none;font-size:14px;font-weight:700}
+.td-post span{font-weight:400;font-size:12px;opacity:.75}
+.td-post:hover{opacity:.9}
+.td-ghost{font:inherit;font-size:14px;font-weight:700;border:1px solid var(--td-line);background:transparent;color:var(--td-ink);border-radius:99px;padding:11px 18px;cursor:pointer;justify-self:start}
+.td-ghost:hover{border-color:var(--td-ink)}
+</style>
+
+<div class="td">
+  <header class="td-head">
+    <div>
+      <div class="td-brandrow"><button type="button" class="td-home" id="to-cover" title="표지 보기" aria-label="MLB 표지 보기"><svg class="td-logo" viewBox="0 0 100 28" role="img" aria-label="MLB"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M33.0854 0L21.305 12.3492L16.9811 0H8.32729V0.00583333L6.49492 0L7.59555 2.75917L1.37276 23.2167L0 28H8.68408L12.7298 14.5892L15.7233 21.5075H21.3595L28.5317 14.5892L24.486 28H33.291L41.7392 0H33.0854ZM90.941 8.45833C90.6084 9.56083 89.5017 10.7392 87.0827 10.7392H81.5977L82.9765 6.1775H88.4615C90.8745 6.1775 91.2736 7.35583 90.941 8.45833ZM88.1592 19.3492C87.8084 20.5275 86.611 21.8283 84.1921 21.8283H78.2596L79.7412 16.9108H85.6797C88.0926 16.9108 88.522 18.1708 88.1652 19.3492H88.1592ZM99.6311 8.21333C101.082 3.3775 98.3249 0 90.8805 0H74.1473L75.26 2.56667L68.5414 25.2933L65.6507 28H83.1942C89.5803 28 95.3314 27.4167 96.9461 22.0675C98.1313 18.1358 96.9521 14.805 95.7063 14.0933C96.9884 13.5042 98.6696 11.3983 99.6311 8.21333ZM49.3711 21.8633H61.5748H61.5808C61.6311 21.8371 61.623 21.8414 61.5973 21.8551C61.4687 21.9234 60.9003 22.2256 65.0339 20.0958L62.5665 27.9942H36.7804L39.5501 25.305L46.4502 2.70667L45.2951 0H55.9688L49.3711 21.8633Z"/></svg></button><span class="sep" aria-hidden="true"></span><span>MKT · 콘텐츠 트렌드 전광판</span></div>
+      <h1 id="title">TREND DASHBOARD</h1>
+    </div>
+    <span class="td-upd">최근 측정 <span id="latest" data-source="latest" data-field="measured" data-row="0">—</span> · 매주 월요일 업데이트</span>
+  </header>
+
+  <nav class="td-tabs" role="tablist" aria-label="대시보드 탭">
+    <button class="td-tab" role="tab" id="tab-trend-rank" data-p="trend-rank">TREND RANK</button>
+    <button class="td-tab" role="tab" id="tab-format-rank" data-p="format-rank">FORMAT RANK</button>
+    <button class="td-tab" role="tab" id="tab-trend-keyword" data-p="trend-keyword">TREND KEYWORD</button>
+    <button class="td-tab" role="tab" id="tab-analysis-logic" data-p="analysis-logic">ANALYSIS LOGIC</button>
+  </nav>
+
+  <section class="td-coverwrap" id="cover" role="dialog" aria-modal="true" aria-label="TREND DASHBOARD 표지" hidden>
+    <div class="td-cover" id="cover-card">
+      <svg class="td-seam" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="200" r="196"/><path d="M70 40 C 150 120, 150 280, 70 360"/><path class="ln" d="M70 40 C 150 120, 150 280, 70 360"/><path d="M330 40 C 250 120, 250 280, 330 360"/><path class="ln" d="M330 40 C 250 120, 250 280, 330 360"/></svg>
+      <div class="top"><svg class="td-logo" viewBox="0 0 100 28" role="img" aria-label="MLB"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M33.0854 0L21.305 12.3492L16.9811 0H8.32729V0.00583333L6.49492 0L7.59555 2.75917L1.37276 23.2167L0 28H8.68408L12.7298 14.5892L15.7233 21.5075H21.3595L28.5317 14.5892L24.486 28H33.291L41.7392 0H33.0854ZM90.941 8.45833C90.6084 9.56083 89.5017 10.7392 87.0827 10.7392H81.5977L82.9765 6.1775H88.4615C90.8745 6.1775 91.2736 7.35583 90.941 8.45833ZM88.1592 19.3492C87.8084 20.5275 86.611 21.8283 84.1921 21.8283H78.2596L79.7412 16.9108H85.6797C88.0926 16.9108 88.522 18.1708 88.1652 19.3492H88.1592ZM99.6311 8.21333C101.082 3.3775 98.3249 0 90.8805 0H74.1473L75.26 2.56667L68.5414 25.2933L65.6507 28H83.1942C89.5803 28 95.3314 27.4167 96.9461 22.0675C98.1313 18.1358 96.9521 14.805 95.7063 14.0933C96.9884 13.5042 98.6696 11.3983 99.6311 8.21333ZM49.3711 21.8633H61.5748H61.5808C61.6311 21.8371 61.623 21.8414 61.5973 21.8551C61.4687 21.9234 60.9003 22.2256 65.0339 20.0958L62.5665 27.9942H36.7804L39.5501 25.305L46.4502 2.70667L45.2951 0H55.9688L49.3711 21.8633Z"/></svg><span>최근 측정 <span id="cv-latest" data-source="latest" data-field="measured" data-row="0">—</span> · 매주 월요일 업데이트</span></div>
+      <div class="hero">
+        <h2>TREND DASHBOARD</h2>
+        <p class="lede">수집한 트렌드 키워드를 <b>인스타그램 실제 콘텐츠</b>로 분석해 진짜 트렌드인지 검증하고, <b>MLB가 쓸 수 있는 트렌드</b>를 남보다 먼저 발굴합니다.</p>
+        <div class="td-cta"><button type="button" class="pri" data-go="trend-rank">대시보드 들어가기</button></div>
+      </div>
+      <div style="display:grid;gap:14px">
+        <div class="picks-h"><h3>이번 주 먼저 탈 트렌드</h3><span>유행 초기 중 최근 14일 게시 비중이 높은 순 · 누르면 상세</span></div>
+        <div class="td-picks" id="cv-picks" data-source="trends"></div>
+      </div>
+      <div class="foot"><span>F&amp;F MLB 마케팅 · 2026 인턴십 개인 과제 · 채승룡</span><span>데이터: 트렌드 매체·SNS 키워드 + 인스타그램 키워드 검색 상위 게시물</span></div>
+    </div>
+  </section>
+
+  <section class="td-page" id="trend-rank" role="tabpanel" aria-labelledby="tab-trend-rank">
+    <div class="td-ctrl">
+      <label for="f-cat">카테고리<select id="f-cat"></select></label>
+      <label for="f-fmt">포맷<select id="f-fmt"></select></label>
+      <label for="f-q">트렌드 검색<input id="f-q" type="search" placeholder="이름으로 찾기"></label>
+    </div>
+    <div class="td-kpis td-score" id="kpis">
+      <div class="td-kpi" role="button" tabindex="0" aria-pressed="false" data-stage="유행 초기"><span class="k"><i class="td-dot" data-st="유행 초기"></i>유행 초기</span><span class="v" id="k-early" data-source="scope_stages" data-where="scope=%EC%A0%84%EC%B2%B4" data-field="early">—</span><span class="s">최근 14일 게시 50% 이상</span></div>
+      <div class="td-kpi" role="button" tabindex="0" aria-pressed="false" data-stage="유행 중"><span class="k"><i class="td-dot" data-st="유행 중"></i>유행 중</span><span class="v" id="k-active" data-source="scope_stages" data-where="scope=%EC%A0%84%EC%B2%B4" data-field="active">—</span><span class="s">최근 30일 게시 30% 이상</span></div>
+      <div class="td-kpi" role="button" tabindex="0" aria-pressed="false" data-stage="유행 지남"><span class="k"><i class="td-dot" data-st="유행 지남"></i>유행 지남</span><span class="v" id="k-past" data-source="scope_stages" data-where="scope=%EC%A0%84%EC%B2%B4" data-field="past">—</span><span class="s">최근 30일 게시 30% 미만</span></div>
+      <div class="td-kpi" role="button" tabindex="0" aria-pressed="false" data-stage="측정 불충분"><span class="k"><i class="td-dot" data-st="측정 불충분"></i>측정 불충분</span><span class="v" id="k-un" data-source="scope_stages" data-where="scope=%EC%A0%84%EC%B2%B4" data-field="insufficient">—</span><span class="s">관련 게시물 12개 미만 · 검색 결과 없음</span></div>
+    </div>
+    <div class="td-card" id="rank-table-card">
+      <h2 id="list-title">전체 트렌드</h2>
+      <div class="td-chips" id="stage-chips" role="group" aria-label="유행 단계 필터"></div>
+      <div class="td-tbl"><table id="rank-table" data-source="trends" data-row-key="trend">
+        <thead><tr>
+          <th data-field="rank"><button type="button" data-sort="rank">순위</button></th>
+          <th data-field="trend">트렌드</th>
+          <th data-field="format">포맷</th>
+          <th data-field="stage"><button type="button" data-sort="stage">유행 단계</button></th>
+          <th data-field="recent14"><button type="button" data-sort="recent14">최근 14일</button></th>
+          <th data-field="recent30"><button type="button" data-sort="recent30">최근 30일</button></th>
+          <th data-field="engagement"><button type="button" data-sort="engagement">좋아요+댓글</button></th>
+          <th data-field="accounts">계정 수</th>
+          <th data-field="verified">인증 계정</th>
+          <th data-field="top_user">대표 게시물</th>
+          <th data-field="score"><button type="button" data-sort="score">종합 점수</button></th>
+          <th data-field="measured">측정일</th>
+        </tr></thead><tbody></tbody></table></div>
+      <p class="td-note" id="rank-count"></p>
+    </div>
+  </section>
+
+  <section class="td-page" id="format-rank" role="tabpanel" aria-labelledby="tab-format-rank" hidden>
+    <div class="td-card">
+      <h2>13개 포맷 순위 — 지금 뜨는 포맷</h2>
+      <p class="td-note">지금 순위는 포맷 안 유행 초기·유행 중 트렌드 수(같으면 활성 비중)로 매긴 최근 측정 기준입니다. 포맷 점수는 포맷 안 상위 5개 트렌드 종합 점수의 평균(10/16 측정)으로, 포맷의 규모를 보여줍니다. 행을 누르면 그 포맷의 TREND RANK로 이동합니다.</p>
+      <div class="td-chips" id="fmt-sort" role="group" aria-label="포맷 정렬"></div>
+      <div class="td-tbl click"><table id="format-table" data-source="format_now" data-row-key="format">
+        <thead><tr>
+          <th data-field="now_rank">지금 순위</th>
+          <th data-field="format">포맷</th>
+          <th data-field="category">카테고리</th>
+          <th data-field="early">유행 초기</th>
+          <th data-field="active">유행 중</th>
+          <th data-field="hot_share">활성 비중</th>
+          <th data-field="hot_trends">지금 뜨는 트렌드</th>
+          <th data-field="score">포맷 점수</th>
+          <th data-field="format_rank">점수 순위</th>
+          <th data-field="trends">트렌드 수</th>
+        </tr></thead><tbody></tbody></table></div>
+      <p class="td-note">활성 비중 = (유행 초기 + 유행 중) ÷ 단계가 판정된 트렌드 수. 측정 불충분은 분모에서 뺍니다.</p>
+    </div>
+    <div class="td-card" id="format-stage-card">
+      <h2>포맷별 유행 단계 구성</h2>
+      <p class="td-note">포맷 안 트렌드가 지금 어느 단계에 있는지입니다(최근 측정 기준). 순서는 위 표의 정렬을 따릅니다.</p>
+      <div class="td-legend" id="fmt-legend"></div>
+      <div class="td-stack" id="fmt-stages" data-source="format_stages"></div>
+    </div>
+  </section>
+
+  <section class="td-page" id="trend-keyword" role="tabpanel" aria-labelledby="tab-trend-keyword" hidden>
+    <div class="td-card">
+      <h2>지금 뜨는 키워드 — 유행 초기·유행 중</h2>
+      <p class="td-note">최근 측정에서 유행 초기·유행 중으로 판정된 트렌드입니다. 진한 막대는 관련 게시물 중 최근 14일 게시 비중, 연한 막대까지가 최근 30일 비중입니다. 유행 초기 먼저, 같은 단계 안에서는 14일 비중 순입니다.</p>
+      <div class="td-chips" id="hot-filter" role="group" aria-label="단계 필터"></div>
+      <div class="td-stack" id="hot-stack" data-source="trends"></div>
+    </div>
+    <div class="td-card">
+      <h2>종합 점수 TOP 30</h2>
+      <p class="td-note">막대 길이가 종합 점수(10점 만점, 10/16 측정)이고, 색이 네 지표의 기여분입니다. 오른쪽 배지는 최근 측정의 유행 단계입니다. 점수가 높아도 유행 지남이면 이미 지나간 트렌드입니다.</p>
+      <div class="td-legend" id="kw-legend"></div>
+      <div class="td-stack" id="kw-stack" data-source="trends"></div>
+    </div>
+  </section>
+
+  <section class="td-page" id="analysis-logic" role="tabpanel" aria-labelledby="tab-analysis-logic" hidden>
+    <div class="td-card">
+      <h2>트렌드 발굴부터 유행 단계까지, 5단계</h2>
+      <p class="td-note">매체 트렌드를 그대로 쓰지 않고, 실제 소비자 게시물로 검증합니다. 순위·점수는 10/16 측정, 유행 단계는 매주 다시 측정합니다(각 단계 카드의 기준일 참고).</p>
+      <div class="td-flow" id="flow" data-source="pipeline"></div>
+    </div>
+    <div class="td-two">
+      <div class="td-card">
+        <h2>순위 기준 — 네 지표의 가중합</h2>
+        <p class="td-note">각 지표를 1~10점으로 바꿔 가중치를 곱해 더합니다. 볼륨·반응은 차이가 수십만 배라 자릿수(로그) 기준입니다.</p>
+        <div class="td-weights" id="weights"></div>
+        <div class="td-rules">
+          <div class="td-rule"><b>볼륨 30%</b><p>해시태그 누적 게시물 수 — 기준치 이상의 대중성</p></div>
+          <div class="td-rule"><b>반응 30%</b><p>검색 상위 24개 좋아요+댓글 — 얼마나 크게 터졌나</p></div>
+          <div class="td-rule"><b>확산 20%</b><p>인증 배지 없는 계정 비율 — 일반인까지 퍼졌나</p></div>
+          <div class="td-rule"><b>최근성 20%</b><p>6개월 안 게시 비율 — 지금도 유효한가</p></div>
+        </div>
+        <p class="td-note">측정 조건: 검색 상위 24개 중 게시물 12개 이상 · 서로 다른 계정 8개 이상 · 캡션에 검색어 25% 이상</p>
+      </div>
+      <div class="td-card">
+        <h2>유행 단계 판정</h2>
+        <p class="td-note">키워드별 인스타 검색 상위 24개 중 캡션(K-POP 챌린지는 음원명 포함)에 검색어가 들어간 관련 게시물의 게시일로 판정합니다. 측정 규모는 위 STEP 05에 표시됩니다.</p>
+        <div class="td-rules" id="stage-rules"></div>
+      </div>
+    </div>
+    <div class="td-card">
+      <h2>자동화 — 매주 월요일 다시 측정해 대시보드를 갱신</h2>
+      <p class="td-note">같은 로직을 정해진 주기로 반복하고, 매번 측정치를 비교해 막 뜨는 트렌드를 먼저 잡습니다.</p>
+      <div class="td-loop">
+        <div><b>자동 실행</b>매주 월요일 오전, 크롬이 켜진 PC에서 예약 작업으로 시작</div>
+        <div><b>수집·분석</b>키워드 수집 → 인스타 실측 → 점수화 → 포맷 분류. 검색 결과 화면의 게시물 데이터를 읽어 키워드당 요청 1회로 수집</div>
+        <div><b>단계 판정</b>최근 14일·30일 게시 비중, 지난 측정 대비 증가분</div>
+        <div><b>대시보드 갱신</b>포맷 필터로 유행 초기 트렌드를 바로 확인</div>
+      </div>
+    </div>
+  </section>
+  <div class="td-scrim" id="dt-scrim"></div>
+  <aside class="td-drawer" id="dt" role="dialog" aria-modal="true" aria-labelledby="dt-name" data-source="trends">
+    <div class="bar1"><span id="dt-badge"></span><button type="button" class="td-x" id="dt-close">닫기</button></div>
+    <div><h3 id="dt-name">—</h3><div class="sub" id="dt-sub">—</div></div>
+    <dl class="td-dl">
+      <div><dt>종합 순위</dt><dd id="dt-rank" data-field="rank">—</dd></div>
+      <div><dt>종합 점수</dt><dd id="dt-score" data-field="score">—</dd></div>
+      <div><dt>관련 게시물</dt><dd id="dt-rel" data-field="related">—</dd></div>
+      <div><dt>좋아요+댓글</dt><dd id="dt-eng" data-field="engagement">—</dd></div>
+      <div><dt>계정 수</dt><dd id="dt-acc" data-field="accounts">—</dd></div>
+      <div><dt>인증 계정</dt><dd id="dt-ver" data-field="verified">—</dd></div>
+    </dl>
+    <div class="td-sec"><h4>최근 게시 비중</h4>
+      <div class="td-big"><span>최근 14일</span><i><span id="dt-b14"></span></i><em id="dt-r14" data-field="recent14">—</em></div>
+      <div class="td-big"><span>최근 30일</span><i><span id="dt-b30"></span></i><em id="dt-r30" data-field="recent30">—</em></div>
+    </div>
+    <div class="td-sec"><h4>종합 점수 구성 (10/16)</h4><div class="td-bar" id="dt-parts" style="height:14px;border-radius:6px"></div><div class="td-legend" id="dt-parts-lg"></div></div>
+    <div class="td-sec" id="dt-post-wrap"><h4>대표 게시물</h4><a class="td-post" id="dt-post" target="_blank" rel="noopener"></a></div>
+    <button type="button" class="td-ghost" id="dt-same">같은 포맷 트렌드 모두 보기</button>
+    <p class="td-note" id="dt-meas">—</p>
+  </aside>
+  <div class="td-tip" id="td-tip" role="tooltip"></div>
+</div>
+
+<script>
+dash.calc('format_stages', {
+  inputs: ['trends'],
+  title: '포맷별 유행 단계 수',
+  description: '포맷마다 유행 초기·유행 중·유행 지남·측정 불충분·미측정 트렌드 수를 셉니다.',
+  fn: (trends) => {
+    const by = {};
+    trends.forEach((t) => {
+      const r = by[t.format] || (by[t.format] = {format: t.format, early: 0, active: 0, past: 0, insufficient: 0, unmeasured: 0, measured: 0});
+      if (t.stage === '유행 초기') r.early++;
+      else if (t.stage === '유행 중') r.active++;
+      else if (t.stage === '유행 지남') r.past++;
+      else if (t.stage === '측정 불충분') r.insufficient++;
+      else r.unmeasured++;
+      if (t.stage !== '미측정') r.measured++;
+    });
+    return Object.values(by);
+  },
+});
+dash.calc('scope_stages', {
+  inputs: ['trends'],
+  title: '선택 범위별 유행 단계 수',
+  description: '전체, 카테고리별, 포맷별로 유행 초기·유행 중·유행 지남·측정 불충분·미측정 트렌드 수를 셉니다.',
+  fn: (trends) => {
+    const by = {};
+    const add = (scope, kind, t) => {
+      const r = by[kind + '|' + scope] || (by[kind + '|' + scope] = {scope, kind, early: 0, active: 0, past: 0, insufficient: 0, unmeasured: 0, measured: 0, total: 0});
+      r.total++;
+      if (t.stage === '유행 초기') r.early++;
+      else if (t.stage === '유행 중') r.active++;
+      else if (t.stage === '유행 지남') r.past++;
+      else if (t.stage === '측정 불충분') r.insufficient++;
+      else r.unmeasured++;
+      if (t.stage !== '미측정') r.measured++;
+    };
+    trends.forEach((t) => { add('전체', 'all', t); add(t.category, 'category', t); add(t.format, 'format', t); });
+    return Object.values(by);
+  },
+});
+dash.calc('format_now', {
+  inputs: ['trends', 'formats'],
+  title: '포맷별 지금 활성도',
+  description: '포맷마다 유행 초기·유행 중 트렌드 수와 활성 비중((초기+중) ÷ 단계 판정된 트렌드 수)을 세고, 초기+중 수 → 활성 비중 순으로 지금 순위를 매깁니다. 포맷 점수·점수 순위는 formats에서 가져옵니다.',
+  fn: (trends, formats) => {
+    const rows = formats.map((f) => {
+      const ts = trends.filter((t) => t.format === f.format);
+      const early = ts.filter((t) => t.stage === '유행 초기');
+      const active = ts.filter((t) => t.stage === '유행 중');
+      const judged = ts.filter((t) => ['유행 초기', '유행 중', '유행 지남'].includes(t.stage)).length;
+      const hot = early.concat(active).sort((a, b) => (a.stage === b.stage ? (b.recent14 || 0) - (a.recent14 || 0) : a.stage === '유행 초기' ? -1 : 1));
+      return {format: f.format, category: f.category, format_rank: f.format_rank, score: f.score, trends: ts.length, early: early.length, active: active.length,
+        hot: early.length + active.length, judged, hot_share: judged ? (early.length + active.length) / judged : 0,
+        hot_trends: hot.slice(0, 3).map((t) => t.trend).join(' · ')};
+    });
+    rows.sort((a, b) => b.hot - a.hot || b.hot_share - a.hot_share || a.format_rank - b.format_rank);
+    rows.forEach((r, i) => { r.now_rank = i + 1; });
+    return rows;
+  },
+});
+dash.calc('latest', {
+  inputs: ['trends'],
+  title: '최근 측정일',
+  description: '트렌드 중 가장 최근에 측정한 날짜입니다.',
+  fn: (trends) => [{measured: trends.reduce((m, t) => (t.measured > m ? t.measured : m), '')}],
+});
+
+window.TD = (function () {
+  const STAGES = ['유행 초기', '유행 중', '유행 지남', '측정 불충분', '미측정'];
+  const stageColor = (s) => ({'유행 초기': 'var(--td-early)', '유행 중': 'var(--td-active)', '유행 지남': 'var(--td-past)', '측정 불충분': 'var(--td-insuf)', '미측정': 'var(--td-track)'}[s] || 'var(--td-track)');
+  const toneProbe = document.createElement('span'); toneProbe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;background:var(--color-bg)';
+  const setTone = () => {
+    const root = document.querySelector('.td'); if (!root) return;
+    if (!toneProbe.isConnected) root.append(toneProbe);
+    const m = getComputedStyle(toneProbe).backgroundColor.match(/[\d.]+/g) || ['255', '255', '255'];
+    const lum = (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255;
+    root.dataset.tone = lum < 0.5 ? 'dark' : 'light';
+  };
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setTone); new MutationObserver(setTone).observe(document.documentElement, {attributes: true, attributeFilter: ['class', 'data-theme', 'style']}); } catch (e) {}
+  const fmtN = (n) => (n == null ? '—' : n >= 10000 ? Intl.NumberFormat('ko-KR', {notation: 'compact', maximumFractionDigits: 1}).format(n) : d3.format(',')(n));
+  const pct = (x) => (x == null ? '—' : d3.format('.0%')(x));
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const badge = (s) => { const b = el('span', 'td-badge', s); b.dataset.st = s; return b; };
+  const safeUrl = (u) => (typeof u === 'string' && u.startsWith('https://www.instagram.com/') ? u : null);
+  return {STAGES, stageColor, fmtN, pct, el, badge, safeUrl, setTone};
+})();
+</script>
+
+<script>
+(function () {
+  const {STAGES, stageColor, fmtN, pct, el, badge, safeUrl, setTone} = window.TD;
+  const pages = ['trend-rank', 'format-rank', 'trend-keyword', 'analysis-logic'];
+  const tabs = [...document.querySelectorAll('.td-tab')];
+  let current = 'trend-rank';
+  let introDone = false, coverOpen = false;
+  const coverEl = document.getElementById('cover');
+  function openCover() {
+    coverOpen = true; coverEl.classList.remove('leaving'); coverEl.hidden = false; coverEl.scrollTop = 0;
+    if (!introDone) { introDone = true; const c = document.getElementById('cover-card'); c.classList.add('intro'); setTimeout(() => c.classList.remove('intro'), 2200); }
+    draw(); setTimeout(() => { const b = coverEl.querySelector('.td-cta .pri'); if (b) b.focus({preventScroll: true}); }, 50);
+  }
+  function closeCover(then) {
+    if (!coverOpen) { if (then) then(); return; }
+    coverOpen = false; if (then) then();
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { coverEl.hidden = true; return; }
+    coverEl.classList.add('leaving'); setTimeout(() => { coverEl.hidden = true; coverEl.classList.remove('leaving'); }, 620);
+  }
+  function show(p) {
+    if (!pages.includes(p)) p = 'trend-rank';
+    current = p;
+    closeDetail(true);
+    pages.forEach((id) => { document.getElementById(id).hidden = id !== p; });
+    tabs.forEach((b) => { b.setAttribute('aria-selected', String(b.dataset.p === p)); b.tabIndex = b.dataset.p === p ? 0 : -1; });
+    dash.setLink(p);
+    draw();
+  }
+  tabs.forEach((b, i) => {
+    b.addEventListener('click', () => show(b.dataset.p));
+    b.addEventListener('keydown', (e) => {
+      const k = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!k) return;
+      const n = tabs[(i + k + tabs.length) % tabs.length]; n.focus(); show(n.dataset.p);
+    });
+  });
+
+
+  /* ── 툴팁 ── */
+  const tip = document.getElementById('td-tip');
+  function showTip(e, title, lines) {
+    tip.replaceChildren(el('b', null, title), ...lines.map((l) => el('div', null, l)));
+    tip.classList.add('show');
+    const r = tip.getBoundingClientRect();
+    const pt = e.touches ? e.touches[0] : e;
+    let x = (pt.clientX ?? 0) + 14, y = (pt.clientY ?? 0) + 14;
+    if (e.type === 'focus' || pt.clientX == null) { const b = e.target.getBoundingClientRect(); x = b.left; y = b.bottom + 8; }
+    x = Math.min(x, innerWidth - r.width - 8); y = Math.min(y, innerHeight - r.height - 8);
+    tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tip.classList.remove('show'); }
+  function bindTip(node, fn) {
+    const on = (e) => { const [t, ls] = fn(); showTip(e, t, ls); };
+    node.addEventListener('mousemove', on); node.addEventListener('mouseleave', hideTip);
+    node.addEventListener('focus', on); node.addEventListener('blur', hideTip);
+  }
+
+  /* ── 트렌드 상세 패널 ── */
+  const dt = document.getElementById('dt'), scrim = document.getElementById('dt-scrim');
+  let lastFocus = null, dtTrend = null;
+  function openDetail(name) {
+    const T = dash.data('trends'); if (T.status !== 'ok') return;
+    const t = T.data.find((x) => x.trend === name); if (!t) return;
+    dtTrend = t; lastFocus = document.activeElement; hideTip();
+    const w = 'trend=' + encodeURIComponent(t.trend);
+    dt.querySelectorAll('[data-field]').forEach((n) => n.setAttribute('data-where', w));
+    document.getElementById('dt-badge').replaceChildren(badge(t.stage));
+    document.getElementById('dt-name').textContent = t.trend;
+    document.getElementById('dt-sub').textContent = `${t.format} · ${t.category}` + (t.query ? ` · 검색어 “${t.query}”` : '');
+    const num = (v) => (v == null ? '—' : d3.format(',')(v));
+    document.getElementById('dt-rank').textContent = t.rank == null ? '—' : t.rank;
+    document.getElementById('dt-score').textContent = t.score == null ? '—' : t.score.toFixed(2);
+    document.getElementById('dt-rel').textContent = num(t.related);
+    document.getElementById('dt-eng').textContent = t.engagement == null ? '—' : fmtN(t.engagement);
+    document.getElementById('dt-acc').textContent = num(t.accounts);
+    document.getElementById('dt-ver').textContent = num(t.verified);
+    [['14', t.recent14], ['30', t.recent30]].forEach(([k, v]) => {
+      const b = document.getElementById('dt-b' + k); b.style.width = ((v || 0) * 100) + '%'; b.style.background = stageColor(t.stage);
+      document.getElementById('dt-r' + k).textContent = pct(v);
+    });
+    const parts = document.getElementById('dt-parts'), lg = document.getElementById('dt-parts-lg');
+    const P = [['볼륨', t.volume, 0.3], ['반응', t.reaction, 0.3], ['확산', t.spread, 0.2], ['최근성', t.recency, 0.2]];
+    if (t.volume == null) { parts.replaceChildren(); lg.replaceChildren(el('span', null, '10/16 점수 측정 대상이 아니었던 트렌드입니다.')); }
+    else {
+      parts.replaceChildren(...P.map(([n, v, wt], i) => { const sp = el('span'); sp.style.width = (v * wt * 10) + '%'; sp.style.background = `var(--td-c${i + 1})`; return sp; }));
+      lg.replaceChildren(...P.map(([n, v, wt], i) => { const sp = el('span'); const d = el('i', 'td-dot'); d.style.background = `var(--td-c${i + 1})`; d.style.borderRadius = '2px'; sp.append(d, `${n} ${v.toFixed(1)}점`); return sp; }));
+    }
+    const u = safeUrl(t.top_post), a = document.getElementById('dt-post');
+    document.getElementById('dt-post-wrap').hidden = !u;
+    if (u) { a.href = u; a.replaceChildren(document.createTextNode('@' + t.top_user), el('span', null, `${t.top_date} · 좋아요 ${num(t.top_likes)} ↗`)); }
+    document.getElementById('dt-meas').textContent = `유행 단계 측정일 ${t.measured} · 순위·점수는 10/16 측정`;
+    dt.classList.add('open'); scrim.classList.add('open');
+    document.getElementById('dt-close').focus();
+  }
+  function closeDetail(silent) {
+    if (!dt.classList.contains('open')) return;
+    dt.classList.remove('open'); scrim.classList.remove('open');
+    if (!silent && lastFocus && lastFocus.isConnected) lastFocus.focus();
+  }
+  document.getElementById('dt-close').addEventListener('click', () => closeDetail());
+  scrim.addEventListener('click', () => closeDetail());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDetail(); });
+  document.getElementById('dt-same').addEventListener('click', () => {
+    if (!dtTrend) return; const t = dtTrend; closeDetail(true);
+    dash.setParams({category: t.category, format: t.format, stage: null}); show('trend-rank');
+  });
+  const activate = (box, sel, fn) => {
+    box.addEventListener('click', (e) => { const n = e.target.closest(sel); if (n && !e.target.closest('a')) fn(n); });
+    box.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const n = e.target.closest(sel); if (n) { e.preventDefault(); fn(n); } });
+  };
+  activate(document.querySelector('#rank-table tbody'), 'tr[data-key]', (n) => openDetail(n.dataset.key));
+  activate(document.getElementById('hot-stack'), '.td-srow[data-key]', (n) => openDetail(n.dataset.key));
+  activate(document.getElementById('kw-stack'), '.td-srow[data-key]', (n) => openDetail(n.dataset.key));
+  activate(document.getElementById('cv-picks'), '.td-pick[data-key]', (n) => { const k = n.dataset.key; closeCover(() => { show('trend-rank'); openDetail(k); }); });
+  activate(document.getElementById('fmt-stages'), '.td-srow[data-key]', (n) => {
+    const f = dash.data('formats').data.find((r) => r.format === n.dataset.key);
+    if (f) { dash.setParams({category: f.category, format: f.format, stage: null}); show('trend-rank'); }
+  });
+  /* 스코어보드 칸 = 단계 필터 */
+  activate(document.getElementById('kpis'), '.td-kpi[data-stage]', (n) => {
+    const cur = dash.params().stage || ''; dash.setParams({stage: cur === n.dataset.stage ? null : n.dataset.stage});
+  });
+  /* 표지 */
+  document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => closeCover(() => show(b.dataset.go))));
+  document.getElementById('to-cover').addEventListener('click', () => openCover());
+  coverEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); closeCover(); } });
+  const prevKpi = {};
+
+  const fCat = document.getElementById('f-cat'), fFmt = document.getElementById('f-fmt'), fQ = document.getElementById('f-q');
+  const chips = document.getElementById('stage-chips');
+  let sortKey = 'stage', sortDir = 1;
+  fCat.addEventListener('change', () => dash.setParams({category: fCat.value || null, format: null}));
+  fFmt.addEventListener('change', () => dash.setParams({format: fFmt.value || null}));
+  fQ.addEventListener('input', () => draw());
+  chips.addEventListener('click', (e) => { const b = e.target.closest('button[data-stage]'); if (b) dash.setParams({stage: b.dataset.stage || null}); });
+  document.querySelector('#rank-table thead').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-sort]'); if (!b) return;
+    if (sortKey === b.dataset.sort) sortDir = -sortDir; else { sortKey = b.dataset.sort; sortDir = 1; }
+    draw();
+  });
+  document.querySelector('#format-table tbody').addEventListener('click', (e) => {
+    const tr = e.target.closest('tr[data-key]'); if (!tr) return;
+    const f = dash.data('formats').data.find((r) => r.format === tr.dataset.key);
+    if (f) { dash.setParams({category: f.category, format: f.format, stage: null}); show('trend-rank'); }
+  });
+
+  function failLine(box) { box.replaceChildren(el('div', 'td-fail', 'Failed to load')); }
+
+  function drawTrendRank(T, SS, F) {
+    const p = dash.params();
+    const cats = [...new Set([...F].sort((a, b) => a.format_rank - b.format_rank).map((f) => f.category))];
+    const cat = cats.includes(p.category) ? p.category : '';
+    const fmts = F.filter((f) => !cat || f.category === cat).sort((a, b) => a.format_rank - b.format_rank).map((f) => f.format);
+    const fmt = fmts.includes(p.format) ? p.format : '';
+    fCat.replaceChildren(new Option('전체', ''), ...cats.map((c) => new Option(c, c))); fCat.value = cat;
+    fFmt.replaceChildren(new Option(cat ? '카테고리 전체' : '전체 포맷', ''), ...fmts.map((f) => new Option(f, f))); fFmt.value = fmt;
+
+    const scope = fmt || cat || '전체';
+    const ss = SS.find((r) => r.scope === scope && r.kind === (fmt ? 'format' : cat ? 'category' : 'all')) || {early: 0, active: 0, past: 0, unmeasured: 0, insufficient: 0, measured: 0, total: 0};
+    [['k-early', 'early'], ['k-active', 'active'], ['k-past', 'past'], ['k-un', 'insufficient']].forEach(([id, f]) => {
+      const n = document.getElementById(id); const val = String(ss[f] ?? '—');
+      if (prevKpi[id] !== undefined && prevKpi[id] !== val) { n.classList.remove('bump'); void n.offsetWidth; n.classList.add('bump'); }
+      prevKpi[id] = val; n.textContent = val;
+      n.setAttribute('data-where', 'scope=' + encodeURIComponent(scope) + '&kind=' + (fmt ? 'format' : cat ? 'category' : 'all'));
+    });
+    document.querySelectorAll('.td-dot').forEach((d) => { d.style.background = stageColor(d.dataset.st); });
+
+    const inScope = T.filter((t) => (!cat || t.category === cat) && (!fmt || t.format === fmt));
+    const early = inScope.filter((t) => t.stage === '유행 초기').sort((a, b) => (b.engagement || 0) - (a.engagement || 0));
+    document.getElementById('list-title').textContent = scope === '전체' ? '전체 트렌드' : `${scope} 트렌드`;
+
+    const sel = p.stage || '';
+    document.querySelectorAll('#kpis .td-kpi[data-stage]').forEach((k) => k.setAttribute('aria-pressed', String(k.dataset.stage === sel)));
+    chips.replaceChildren(...[''].concat(STAGES.filter((s) => s !== '미측정' || inScope.some((t) => t.stage === s))).map((s) => {
+      const b = el('button', 'td-chip', s ? `${s} ${inScope.filter((t) => t.stage === s).length}` : `전체 ${inScope.length}`);
+      b.type = 'button'; b.dataset.stage = s; b.setAttribute('aria-pressed', String(s === sel)); return b;
+    }));
+
+    const q = fQ.value.trim().toLowerCase();
+    const order = (t) => STAGES.indexOf(t.stage);
+    const rk = (t) => (t.rank ?? 9000) - (t.rank == null ? (t.engagement || 0) / 1e9 : 0);
+    const val = (t) => (sortKey === 'stage' ? order(t) * 1e5 + rk(t) : sortKey === 'rank' ? rk(t) : -(t[sortKey] ?? -1));
+    const rows = inScope.filter((t) => (!sel || t.stage === sel) && (!q || t.trend.toLowerCase().includes(q))).sort((a, b) => sortDir * (val(a) - val(b)));
+    const tb = document.querySelector('#rank-table tbody');
+    tb.replaceChildren(...rows.map((t) => {
+      const tr = document.createElement('tr'); tr.dataset.key = t.trend; tr.tabIndex = 0; tr.title = '눌러서 상세 보기';
+      const td = (child, cls) => { const c = el('td', cls); if (child instanceof Node) c.append(child); else c.textContent = child; return c; };
+      const bar = (x, s) => { const w = el('span', 'td-pct'); const i = el('i'); const f = el('span'); f.style.width = ((x || 0) * 100) + '%'; f.style.background = stageColor(s); i.append(f); w.append(i, el('em', null, pct(x))); return x == null ? '—' : w; };
+      const name = el('span'); name.append(el('b', null, t.trend)); if (t.is_new) name.append(' ', el('span', 'td-badge new', '신규')); if (t.query) { name.append(document.createElement('br'), el('span', 'td-note', `검색어 “${t.query}”`)); }
+      const u = safeUrl(t.top_post); let ref = '—';
+      if (u) { ref = el('a', 'td-ext', t.top_user); ref.href = u; ref.target = '_blank'; ref.rel = 'noopener'; ref.title = `${t.top_date} · 좋아요 ${d3.format(',')(t.top_likes)}`; }
+      tr.append(td(t.rank ?? '—', 'n'), td(name), td(t.format), td(badge(t.stage)), td(bar(t.recent14, t.stage)), td(bar(t.recent30, t.stage)), td(t.engagement == null ? '—' : d3.format(',')(t.engagement), 'n'),
+        td(t.accounts ?? '—', 'n'), td(t.verified ?? '—', 'n'), td(ref), td(t.score == null ? '—' : t.score.toFixed(2), 'n'), td(t.measured, 'n'));
+      return tr;
+    }));
+    document.getElementById('rank-count').textContent = `${rows.length}개 표시 · 유행 단계 순, 같은 단계 안에서는 순위 순입니다. 머리글을 누르면 정렬이, 행을 누르면 상세가 열립니다.`;
+  }
+
+  let fmtSort = 'now';
+  document.getElementById('fmt-sort').addEventListener('click', (e) => { const b = e.target.closest('button[data-s]'); if (b) { fmtSort = b.dataset.s; draw(); } });
+  function drawFormatRank(FN, FS) {
+    const tb = document.querySelector('#format-table tbody');
+    const max = d3.max(FN, (f) => f.score) || 10;
+    document.getElementById('fmt-sort').replaceChildren(...[['now', '지금 순위순'], ['score', '포맷 점수순']].map(([k, n]) => { const b = el('button', 'td-chip', n); b.type = 'button'; b.dataset.s = k; b.setAttribute('aria-pressed', String(k === fmtSort)); return b; }));
+    const sorted = [...FN].sort((a, b) => (fmtSort === 'now' ? a.now_rank - b.now_rank : a.format_rank - b.format_rank));
+    const td = (c, cls) => { const x = el('td', cls); if (c instanceof Node) x.append(c); else x.textContent = c; return x; };
+    const meter = (x, w, color, label) => { const sc = el('span', 'td-pct'); sc.style.gridTemplateColumns = w + ' 2.8rem'; const i = el('i'); const fill = el('span'); fill.style.width = (x * 100) + '%'; fill.style.background = color; i.append(fill); sc.append(i, el('em', null, label)); return sc; };
+    tb.replaceChildren(...sorted.map((f) => {
+      const tr = document.createElement('tr'); tr.dataset.key = f.format;
+      tr.append(td(f.now_rank, 'n'), td(el('b', null, f.format)), td(f.category), td(f.early, 'n'), td(f.active, 'n'),
+        td(meter(f.hot_share, '4rem', 'var(--td-early)', pct(f.hot_share))), td(f.hot_trends || '—'),
+        td(meter(f.score / max, '4rem', 'var(--td-c2)', f.score.toFixed(2))), td(f.format_rank, 'n'), td(f.trends, 'n'));
+      return tr;
+    }));
+    const lg = document.getElementById('fmt-legend');
+    lg.replaceChildren(...STAGES.map((s) => { const sp = el('span'); const d = el('i', 'td-dot'); d.style.background = stageColor(s); d.dataset.st = s; sp.append(d, s); return sp; }));
+    document.getElementById('fmt-stages').replaceChildren(...sorted.map((f) => {
+      const s = FS.find((r) => r.format === f.format) || {};
+      const r = el('div', 'td-srow click'); r.dataset.key = f.format; r.tabIndex = 0; r.setAttribute('role', 'button');
+      const nm = el('span', 'nm'); nm.append(el('b', null, fmtSort === 'now' ? f.now_rank : f.format_rank), f.format);
+      const bar = el('div', 'td-bar'); bar.style.height = '14px'; bar.style.borderRadius = '4px';
+      const tot = (s.early || 0) + (s.active || 0) + (s.past || 0) + (s.insufficient || 0) + (s.unmeasured || 0) || 1;
+      [['유행 초기', s.early], ['유행 중', s.active], ['유행 지남', s.past], ['측정 불충분', s.insufficient], ['미측정', s.unmeasured]].forEach(([st, n]) => { if (!n) return; const seg = el('span'); seg.style.width = (n / tot * 100) + '%'; seg.style.background = stageColor(st); seg.title = st + ' ' + n; bar.append(seg); });
+      bindTip(r, () => [f.format, [['유행 초기', s.early], ['유행 중', s.active], ['유행 지남', s.past], ['측정 불충분', s.insufficient]].filter(([, n]) => n).map(([st, n]) => `${st} ${n}개 (${pct(n / tot)})`).concat(['누르면 이 포맷의 트렌드 순위'])]);
+      r.append(nm, bar, el('span', 'sv', `${tot}개`));
+      return r;
+    }));
+  }
+
+  let hotSel = '';
+  document.getElementById('hot-filter').addEventListener('click', (e) => { const b = e.target.closest('button[data-h]'); if (b) { hotSel = b.dataset.h; draw(); } });
+  function drawHot(T) {
+    const all = T.filter((t) => t.stage === '유행 초기' || t.stage === '유행 중');
+    document.getElementById('hot-filter').replaceChildren(...[['', `전체 ${all.length}`], ['유행 초기', `유행 초기 ${all.filter((t) => t.stage === '유행 초기').length}`], ['유행 중', `유행 중 ${all.filter((t) => t.stage === '유행 중').length}`]].map(([k, n]) => { const b = el('button', 'td-chip', n); b.type = 'button'; b.dataset.h = k; b.setAttribute('aria-pressed', String(k === hotSel)); return b; }));
+    const rows = all.filter((t) => !hotSel || t.stage === hotSel).sort((a, b) => (a.stage === b.stage ? (b.recent14 || 0) - (a.recent14 || 0) || (b.recent30 || 0) - (a.recent30 || 0) : a.stage === '유행 초기' ? -1 : 1));
+    document.getElementById('hot-stack').replaceChildren(...rows.map((t) => {
+      const r = el('div', 'td-srow click'); r.dataset.key = t.trend; r.tabIndex = 0; r.setAttribute('role', 'button');
+      const nm = el('span', 'nm'); nm.append(el('b', null, t.rank ?? '—'), t.trend + ' ', el('span', 'td-note', t.format));
+      const bar = el('div', 'td-bar'); bar.style.height = '14px'; bar.style.borderRadius = '4px'; bar.style.flex = '1'; bar.style.gap = '0';
+      const c = stageColor(t.stage);
+      const s1 = el('span'); s1.style.width = ((t.recent14 || 0) * 100) + '%'; s1.style.background = c;
+      const s2 = el('span'); s2.style.width = (Math.max(0, (t.recent30 || 0) - (t.recent14 || 0)) * 100) + '%'; s2.style.background = c; s2.style.opacity = '.4';
+      bar.append(s1, s2);
+      bindTip(r, () => [t.trend, [`${t.format}${t.rank ? ' · 종합 ' + t.rank + '위' : ''}`, `최근 14일 ${pct(t.recent14)} · 최근 30일 ${pct(t.recent30)}`, `좋아요+댓글 ${fmtN(t.engagement)} · 계정 ${t.accounts ?? '—'}개`, '누르면 상세']]);
+      const wrap = el('div'); wrap.style.display = 'flex'; wrap.style.gap = '8px'; wrap.style.alignItems = 'center'; wrap.style.minWidth = '0';
+      wrap.append(bar, badge(t.stage));
+      r.append(nm, wrap, el('span', 'sv', pct(t.recent14))); return r;
+    }));
+  }
+
+  function drawKeywords(T) {
+    drawHot(T);
+    const cols = ['var(--td-c1)', 'var(--td-c2)', 'var(--td-c3)', 'var(--td-c4)'];
+    const names = ['볼륨 × 0.3', '반응 × 0.3', '확산 × 0.2', '최근성 × 0.2'];
+    document.getElementById('kw-legend').replaceChildren(...names.map((n, i) => { const sp = el('span'); const d = el('i', 'td-dot'); d.style.background = cols[i]; d.style.borderRadius = '2px'; sp.append(d, n); return sp; }));
+    const top = T.filter((t) => t.rank != null).sort((a, b) => a.rank - b.rank).slice(0, 30);
+    document.getElementById('kw-stack').replaceChildren(...top.map((t) => {
+      const r = el('div', 'td-srow click'); r.dataset.key = t.trend; r.tabIndex = 0; r.setAttribute('role', 'button');
+      bindTip(r, () => [`${t.rank}위 ${t.trend}`, [`종합 ${t.score.toFixed(2)}점 = 볼륨 ${(t.volume * 0.3).toFixed(2)} + 반응 ${(t.reaction * 0.3).toFixed(2)} + 확산 ${(t.spread * 0.2).toFixed(2)} + 최근성 ${(t.recency * 0.2).toFixed(2)}`, `유행 단계 ${t.stage}`, '누르면 상세']]);
+      const nm = el('span', 'nm'); nm.append(el('b', null, t.rank), t.trend + ' ', el('span', 'td-note', t.format));
+      const parts = [t.volume * 0.3, t.reaction * 0.3, t.spread * 0.2, t.recency * 0.2];
+      const bar = el('div', 'td-bar'); bar.style.height = '14px'; bar.style.borderRadius = '4px';
+      parts.forEach((x, i) => { const s = el('span'); s.style.width = (x * 10) + '%'; s.style.background = cols[i]; bar.append(s); });
+      const right = el('span', 'sv', t.score.toFixed(2));
+      const wrap = el('div'); wrap.style.display = 'flex'; wrap.style.gap = '8px'; wrap.style.alignItems = 'center'; wrap.style.minWidth = '0';
+      bar.style.flex = '1'; wrap.append(bar); if (t.stage !== '미측정') wrap.append(badge(t.stage));
+      r.append(nm, wrap, right); return r;
+    }));
+  }
+
+  function drawLogic(P) {
+    document.getElementById('flow').replaceChildren(...[...P].sort((a, b) => a.step - b.step).map((s) => {
+      const c = el('div', 'td-step');
+      const v = el('span', 'v', s.value); v.setAttribute('data-source', 'pipeline'); v.setAttribute('data-field', 'value'); v.setAttribute('data-where', 'step=' + s.step);
+      c.append(el('span', 'no', 'STEP ' + String(s.step).padStart(2, '0') + (s.date ? ' · ' + s.date + ' 기준' : '')), el('b', null, s.name), v, el('span', 't', s.detail), el('span', 't', '사용 툴 · ' + s.tools));
+      return c;
+    }));
+    const w = document.getElementById('weights');
+    w.replaceChildren(...[['볼륨', 30, 0], ['반응', 30, 1], ['확산', 20, 2], ['최근성', 20, 3]].map(([n, x, i]) => { const d = el('div'); d.style.flex = x; d.style.background = `var(--td-c${i + 1})`; d.style.color = `var(--td-c${i + 1}-ink)`; d.append(el('span', null, n), el('span', null, x + '%')); return d; }));
+    const rules = [['유행 초기', '관련 게시물 중 최근 14일 게시 비중 50% 이상 — 막 퍼지기 시작, 지금 탈 것'], ['유행 중', '최근 30일 게시 비중 30% 이상 — 아직 활발히 만들어지는 중'], ['유행 지남', '최근 30일 게시 비중 30% 미만 — 예전에 떴고 지금은 잠잠함'], ['측정 불충분', '관련 게시물 12개 미만이거나 인스타 검색 결과가 없음 — 검색어 보완 필요']];
+    document.getElementById('stage-rules').replaceChildren(...rules.map(([s, t]) => { const r = el('div', 'td-rule'); r.append(badge(s), el('p', null, t)); return r; }));
+  }
+
+
+  function drawCover(T) {
+    const picks = T.filter((t) => t.stage === '유행 초기').sort((a, b) => (b.recent14 || 0) - (a.recent14 || 0) || (b.engagement || 0) - (a.engagement || 0)).slice(0, 4);
+    document.getElementById('cv-picks').replaceChildren(...picks.map((t) => {
+      const b = el('button', 'td-pick'); b.type = 'button'; b.dataset.key = t.trend;
+      const w = 'trend=' + encodeURIComponent(t.trend);
+      const nm = el('span', 'nm', t.trend); nm.setAttribute('data-field', 'trend'); nm.setAttribute('data-where', w);
+      const m = el('span', 'meter'); const i = el('i'); const f = el('span'); f.style.width = ((t.recent14 || 0) * 100) + '%'; i.append(f);
+      const v = el('span', null, '14일 ' + pct(t.recent14)); v.setAttribute('data-field', 'recent14'); v.setAttribute('data-where', w);
+      m.append(i, v);
+      b.append(badge(t.stage), nm, el('span', 'fm', t.format), m);
+      return b;
+    }));
+  }
+  function draw() {
+    setTone();
+    const t = dash.data('trends'), f = dash.data('formats'), fs = dash.data('format_stages'), ss = dash.data('scope_stages'), lt = dash.data('latest'), p = dash.data('pipeline'), fn = dash.data('format_now');
+    const latest = document.getElementById('latest');
+    latest.textContent = lt.status === 'ok' && lt.data[0] ? lt.data[0].measured : '—';
+    document.getElementById('cv-latest').textContent = latest.textContent;
+    document.querySelectorAll('.td-dot[data-st]').forEach((d) => { d.style.background = stageColor(d.dataset.st); });
+    if (t.status !== 'ok' || f.status !== 'ok' || fs.status !== 'ok' || ss.status !== 'ok') {
+      if (t.status === 'error' || f.status === 'error') { failLine(document.querySelector('#rank-table tbody')); }
+      return;
+    }
+    if (coverOpen) drawCover(t.data);
+    if (current === 'trend-rank') drawTrendRank(t.data, ss.data, f.data);
+    if (current === 'format-rank') { if (fn.status === 'ok') drawFormatRank(fn.data, fs.data); else if (fn.status === 'error') failLine(document.querySelector('#format-table tbody')); }
+    if (current === 'trend-keyword') drawKeywords(t.data);
+    if (current === 'analysis-logic') { if (p.status === 'ok') drawLogic(p.data); else if (p.status === 'error') failLine(document.getElementById('flow')); }
+  }
+  dash.onData(draw);
+  const h = location.hash.slice(1);
+  show(pages.includes(h) ? h : 'trend-rank');
+  if (!pages.includes(h)) openCover();
+})();
+</script>
+
+</div>
+</body>
+</html>
