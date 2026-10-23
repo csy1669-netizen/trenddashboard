@@ -1,1 +1,47 @@
-[{"step": 1, "name": "키워드 발굴", "value": "3,110개", "count": 3110, "detail": "트렌드 매체·SNS 자동 수집", "tools": "Python 크롤링 스크립트 · Claude in Chrome · Apify · YouTube API · NAVER API", "date": "10/16"}, {"step": 2, "name": "인스타 데이터 수집", "value": "480건", "count": 480, "detail": "키워드별 인기 게시물 24개의 인게이지먼트·원본 (10/22 재측정: 키워드 332개 · 게시물 6,921건)", "tools": "Python · Claude in Chrome · Apify · Meta API", "date": "10/16 · 10/22"}, {"step": 3, "name": "자동 점수화", "value": "323건", "count": 323, "detail": "측정 조건 통과 · 4가지 기준 가중합", "tools": "Python 점수화 스크립트", "date": "10/16"}, {"step": 4, "name": "포맷 분류", "value": "13종", "count": 13, "detail": "콘텐츠 형식 단위로 묶음", "tools": "Claude · LLM 분류", "date": "10/16"}, {"step": 5, "name": "유행 단계 측정", "value": "332건", "count": 332, "detail": "트렌드 332개 전체 재측정(10/22) · 게시물 6,921건의 게시일로 유행 초기·중·지남 판정", "tools": "Claude in Chrome · Python", "date": "10/22"}]
+[
+ {
+  "step": 1,
+  "name": "키워드 자동 수집",
+  "value": "3,167개",
+  "count": 3167,
+  "detail": "누적 키워드 풀 · 이번 주 신규 후보 48개 (캐릿 전광판·아티클, 고구마팜)",
+  "tools": "Python 크롤링 · Claude in Chrome · Apify · YouTube API · NAVER API",
+  "date": "10/23"
+ },
+ {
+  "step": 2,
+  "name": "인스타 콘텐츠 수집",
+  "value": "380개",
+  "count": 380,
+  "detail": "키워드별 인스타 검색 상위 24개 · 기존 332개(10/22) + 신규 후보 48개(10/23) · 게시물 7,883건 (검색 화면 데이터 읽기, 키워드당 요청 1회)",
+  "tools": "Claude in Chrome · JavaScript · Meta API",
+  "date": "10/22 · 10/23"
+ },
+ {
+  "step": 3,
+  "name": "점수화 · 순위 측정",
+  "value": "346개",
+  "count": 346,
+  "detail": "측정 조건 통과 → 볼륨·반응·확산·최근성 가중합 · 이번 주 신규 통과 15개 + 10/22 별도 탐색 K-POP 챌린지 8개 점수 부여",
+  "tools": "Python 점수화 스크립트 · Claude 포맷 분류",
+  "date": "10/23"
+ },
+ {
+  "step": 4,
+  "name": "유행 단계 측정",
+  "value": "346개",
+  "count": 346,
+  "detail": "점수·순위가 있는 트렌드 전체의 게시일 분포로 판정 · 유행 초기 22 · 유행 중 41 · 유행 지남 212",
+  "tools": "Claude in Chrome · Python",
+  "date": "10/22 · 10/23"
+ },
+ {
+  "step": 5,
+  "name": "자동화 · 대시보드 업데이트",
+  "value": "매주 월",
+  "count": 0,
+  "detail": "13:41 Claude 예약 작업이 1~4단계 실행 → 대시보드·휴대폰 알림 → 15:00 GitHub 자동 반영",
+  "tools": "Claude 예약 작업 · Windows 작업 스케줄러 · GitHub Pages",
+  "date": "10/23"
+ }
+]
