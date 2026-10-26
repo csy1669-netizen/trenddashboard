@@ -1,17 +1,16 @@
 {
- "measured": "2026-10-23",
- "trends": 346,
- "scored": 346,
- "pool": 3167,
- "new_candidates": 48,
- "new_added": 15,
+ "measured": "2026-10-26",
+ "trends": 356,
+ "scored": 356,
+ "pool": 3184,
+ "new_candidates": 45,
+ "new_added": 10,
  "stages": {
-  "유행 지남": 212,
-  "유행 중": 41,
-  "측정 불충분": 71,
-  "유행 초기": 22
+  "유행 지남": 235,
+  "유행 중": 42,
+  "유행 초기": 21,
+  "측정 불충분": 58
  },
- "discovered_until": "2026-10-23",
- "by": "Claude (주간 예약 측정)",
- "note": "10/22 별도 탐색 K-POP 챌린지 9개 중 8개 점수 부여, AI 칼군무 챌린지는 측정 조건 미통과로 제외"
+ "discovered_until": "2026-10-26",
+ "by": "Claude (주간 예약 측정)"
 }

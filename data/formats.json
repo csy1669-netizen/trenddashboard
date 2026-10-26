@@ -4,9 +4,9 @@
   "category": "캐릭터·푸드·라이프",
   "format_rank": 1,
   "score": 7.69,
-  "trends": 57,
-  "in_top30": 8,
-  "in_top100": 23,
+  "trends": 58,
+  "in_top30": 9,
+  "in_top100": 24,
   "top_trends": "치이카와 · 왁뿌볼 · 키덜트"
  },
  {
@@ -14,9 +14,9 @@
   "category": "콘텐츠·챌린지",
   "format_rank": 2,
   "score": 7.67,
-  "trends": 19,
+  "trends": 20,
   "in_top30": 6,
-  "in_top100": 11,
+  "in_top100": 12,
   "top_trends": "BAD 챌린지 (에이티즈) · 캐치캐치 챌린지 (최예나) · L을 가져가"
  },
  {
@@ -35,14 +35,24 @@
   "format_rank": 4,
   "score": 7.19,
   "trends": 18,
-  "in_top30": 4,
+  "in_top30": 3,
   "in_top100": 10,
   "top_trends": "연애의 조건 역주행 (베스티) · 역조공 · 생일 카페"
  },
  {
-  "format": "유행어·밈",
+  "format": "패러디·상황극 영상",
   "category": "콘텐츠·챌린지",
   "format_rank": 5,
+  "score": 7.03,
+  "trends": 28,
+  "in_top30": 2,
+  "in_top100": 9,
+  "top_trends": "아이찡 이모지 밈 · 시험지 망토 릴스 · 영원할 건가 보다 릴스"
+ },
+ {
+  "format": "유행어·밈",
+  "category": "콘텐츠·챌린지",
+  "format_rank": 6,
   "score": 7.01,
   "trends": 21,
   "in_top30": 1,
@@ -50,19 +60,29 @@
   "top_trends": "거제 야호 · 밤티 · 영크크"
  },
  {
+  "format": "장소·체험·라이프스타일",
+  "category": "캐릭터·푸드·라이프",
+  "format_rank": 7,
+  "score": 6.98,
+  "trends": 44,
+  "in_top30": 1,
+  "in_top100": 7,
+  "top_trends": "젠더리빌 파티 · 노들섬 · 탐조"
+ },
+ {
   "format": "음식·디저트",
   "category": "캐릭터·푸드·라이프",
-  "format_rank": 6,
+  "format_rank": 8,
   "score": 6.95,
-  "trends": 41,
+  "trends": 42,
   "in_top30": 0,
-  "in_top100": 13,
+  "in_top100": 11,
   "top_trends": "말차 · 불닭 오믈렛 · 불닭 냉면"
  },
  {
   "format": "마이크로웹사이트·AI·게임",
   "category": "엔터·브랜드·디지털",
-  "format_rank": 7,
+  "format_rank": 9,
   "score": 6.95,
   "trends": 39,
   "in_top30": 2,
@@ -72,49 +92,29 @@
  {
   "format": "사진·기록",
   "category": "콘텐츠·챌린지",
-  "format_rank": 8,
+  "format_rank": 10,
   "score": 6.94,
-  "trends": 14,
+  "trends": 15,
   "in_top30": 1,
   "in_top100": 6,
   "top_trends": "인생네컷 · film dump · 셋로그"
  },
  {
-  "format": "장소·체험·라이프스타일",
-  "category": "캐릭터·푸드·라이프",
-  "format_rank": 9,
-  "score": 6.92,
-  "trends": 42,
-  "in_top30": 1,
-  "in_top100": 7,
-  "top_trends": "젠더리빌 파티 · 탐조 · 러닝크루"
- },
- {
   "format": "뷰티·메이크업",
   "category": "패션·뷰티",
-  "format_rank": 10,
+  "format_rank": 11,
   "score": 6.84,
   "trends": 18,
-  "in_top30": 1,
+  "in_top30": 0,
   "in_top100": 4,
   "top_trends": "Glass Skin(유리 같은 피부) · 캐릭터 변신 메이크업 · 한국식 립(오버립)"
- },
- {
-  "format": "패러디·상황극 영상",
-  "category": "콘텐츠·챌린지",
-  "format_rank": 11,
-  "score": 6.81,
-  "trends": 27,
-  "in_top30": 1,
-  "in_top100": 10,
-  "top_trends": "시험지 망토 릴스 · 영원할 건가 보다 릴스 · 엄미새"
  },
  {
   "format": "브랜드 캠페인·협업",
   "category": "엔터·브랜드·디지털",
   "format_rank": 12,
   "score": 6.59,
-  "trends": 21,
+  "trends": 22,
   "in_top30": 1,
   "in_top100": 2,
   "top_trends": "이달의 브랜드 — 민음사 · 테슬라 로드스터 비행 · 마음자로"
@@ -123,10 +123,10 @@
   "format": "패션 스타일·아이템",
   "category": "패션·뷰티",
   "format_rank": 13,
-  "score": 6.27,
-  "trends": 19,
+  "score": 6.43,
+  "trends": 21,
   "in_top30": 0,
-  "in_top100": 1,
-  "top_trends": "레몬코어 · 슬래커 코어 · 고프코어"
+  "in_top100": 2,
+  "top_trends": "퍼플 코어 · 레몬코어 · 스카프 코디"
  }
 ]
