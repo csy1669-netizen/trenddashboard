@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TREND DASHBOARD 주간 갱신 — 신규 키워드 점수화 + 유행 단계 갱신 + 집계.
+"""TREND DASHBOARD 매일 갱신 — 신규 키워드 점수화 + 유행 단계 갱신 + 집계.
 
 사용:
   python3 weekly_update.py --data <data 폴더> --date YYYY-MM-DD \
@@ -7,7 +7,7 @@
 
 입력
   data/trends.json, data/formats.json, data/pipeline.json, data/keyword_pool.json
-  cands.json   : 이번 주 신규 후보 [{trend, query, format, category, source, seen}]
+  cands.json   : 이번 회차 신규 후보 [{trend, query, format, category, source, seen}]
                  (지난주 미통과 재측정 후보도 같은 형식, source 앞에 '재측정 · ')
   new_out.tsv  : 신규 후보 측정 결과. 칸: trend, 해시태그 게시물, 게시물 n, 캡션 일치,
                  계정 수, 인증 계정, 좋아요+댓글(전체), 6개월 내 게시, 관련 14일, 관련 30일,
@@ -78,6 +78,11 @@ def main():
     a = ap.parse_args()
     D = lambda f: json.load(open(os.path.join(a.data, f), encoding='utf-8'))
     trends, formats, pipeline, pool = D('trends.json'), D('formats.json'), D('pipeline.json'), D('keyword_pool.json')
+    try:
+        prev_last = D('last_update.json')
+    except Exception:
+        prev_last = {}
+    prev_pipe = {x.get('step'): x for x in pipeline}
     today = a.date
     md = f"{int(today[5:7])}/{int(today[8:10])}"
     os.makedirs(a.outdir, exist_ok=True)
@@ -205,27 +210,34 @@ def main():
         counts[t['stage']] = counts.get(t['stage'], 0) + 1
     measured_now = len(stage_rows) + len(new_rows)
     posts_now = posts_stage + posts_new
+    full_day = bool(stage_rows)  # 전체 유행 단계 재측정한 날(주 1회)
+    full_measured = today if full_day else prev_last.get('full_measured', prev_last.get('measured', today))
+    fmd = f"{int(full_measured[5:7])}/{int(full_measured[8:10])}"
+    p2 = prev_pipe.get(2, {})
     pipeline = [
         {'step': 1, 'name': '키워드 자동 수집', 'value': f'{len(pool):,}개', 'count': len(pool),
-         'detail': f'누적 키워드 풀 · 이번 주 신규 후보 {len(cands)}개 (캐릿 전광판·아티클, 고구마팜)',
+         'detail': f'누적 키워드 풀 · 매일 캐릿 전광판·아티클, 고구마팜에서 탐색 · 오늘 신규 후보 {len(cands)}개',
          'tools': 'Python 크롤링 · Claude in Chrome · Apify · YouTube API · NAVER API', 'date': md},
-        {'step': 2, 'name': '인스타 콘텐츠 수집', 'value': f'{measured_now:,}개', 'count': measured_now,
-         'detail': f'키워드별 인스타 검색 상위 24개 · 이번 주 게시물 {posts_now:,}건 (검색 화면 데이터 읽기, 키워드당 요청 1회)',
-         'tools': 'Claude in Chrome · JavaScript · Meta API', 'date': md},
+        ({'step': 2, 'name': '인스타 콘텐츠 수집', 'value': f'{measured_now:,}개', 'count': measured_now,
+         'detail': f'키워드별 인스타 검색 상위 24개 · 게시물 {posts_now:,}건 (검색 화면 데이터 읽기, 키워드당 요청 1회)',
+         'tools': 'Claude in Chrome · JavaScript · Meta API', 'date': md} if full_day else
+         {'step': 2, 'name': '인스타 콘텐츠 수집', 'value': p2.get('value', f'{measured_now:,}개'), 'count': p2.get('count', measured_now),
+         'detail': f"{p2.get('detail', '').split(' · 오늘')[0]} · 오늘 신규 후보 {len(new_rows)}개 측정",
+         'tools': p2.get('tools', 'Claude in Chrome · JavaScript · Meta API'), 'date': p2.get('date', fmd)}),
         {'step': 3, 'name': '점수화 · 순위 측정', 'value': f'{len(scored):,}개', 'count': len(scored),
-         'detail': f'측정 조건 통과 → 볼륨·반응·확산·최근성 가중합 · 이번 주 신규 통과 {len(added)}개',
+         'detail': f'측정 조건 통과 → 볼륨·반응·확산·최근성 가중합 · 매일 신규 통과분 추가 후 전체 순위 재정렬 · 오늘 신규 통과 {len(added)}개',
          'tools': 'Python 점수화 스크립트 · Claude 포맷 분류', 'date': md},
         {'step': 4, 'name': '유행 단계 측정', 'value': f'{len(trends):,}개', 'count': len(trends),
-         'detail': f"게시일 분포로 판정 · 유행 초기 {counts.get('유행 초기', 0)} · 유행 중 {counts.get('유행 중', 0)} · 유행 지남 {counts.get('유행 지남', 0)}",
+         'detail': f"게시일 분포로 판정 · 유행 초기 {counts.get('유행 초기', 0)} · 유행 중 {counts.get('유행 중', 0)} · 유행 지남 {counts.get('유행 지남', 0)} · 단계 측정 {fmd}",
          'tools': 'Claude in Chrome · Python', 'date': md},
-        {'step': 5, 'name': '자동화 · 대시보드 업데이트', 'value': '매주 월', 'count': 0,
-         'detail': '13:41 Claude 예약 작업이 1~4단계 실행 → 대시보드·휴대폰 알림 → 15:00 GitHub 자동 반영',
+        {'step': 5, 'name': '자동화 · 대시보드 업데이트', 'value': '매일 15:00', 'count': 0,
+         'detail': '매일 13:21 Claude 예약 작업 시작 → 신규 키워드 탐색·인스타 측정·점수·단계 판정 → 15:00까지 대시보드 반영 → 15:00 GitHub 자동 반영',
          'tools': 'Claude 예약 작업 · Windows 작업 스케줄러 · GitHub Pages', 'date': md},
     ]
 
     last = {'measured': today, 'trends': len(trends), 'scored': len(scored), 'pool': len(pool),
             'new_candidates': len(cands), 'new_added': len(added), 'stages': counts,
-            'discovered_until': today, 'by': 'Claude (주간 예약 측정)'}
+            'discovered_until': today, 'full_measured': full_measured, 'by': 'Claude (매일 예약 측정)'}
     summary = {'scored_existing': [{'trend': t['trend'], 'score': t['score'], 'rank': t['rank'], 'stage': t['stage']} for t in scored_existing],
                'removed': removed,
                'added': [{'trend': t['trend'], 'score': t['score'], 'rank': t['rank'], 'stage': t['stage'],
@@ -233,7 +245,7 @@ def main():
                'failed': failed, 'stages_now': counts, 'stages_prev': prev_counts,
                'new_early': [t['trend'] for t in trends if t['stage'] == '유행 초기' and (t.get('prev_stage') not in ('유행 초기', None) or t.get('added') == today)],
                'dropped': [t['trend'] for t in trends if t.get('prev_stage') in ('유행 초기', '유행 중') and t['stage'] == '유행 지남'],
-               'posts': posts_now, 'measured': measured_now}
+               'posts': posts_now, 'measured': measured_now, 'full_day': full_day, 'full_measured': full_measured}
     for name, obj in [('trends.json', trends), ('formats.json', formats), ('pipeline.json', pipeline),
                       ('keyword_pool.json', pool), ('last_update.json', last), ('summary.json', summary)]:
         json.dump(obj, open(os.path.join(a.outdir, name), 'w', encoding='utf-8'), ensure_ascii=False,

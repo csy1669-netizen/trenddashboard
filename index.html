@@ -306,7 +306,7 @@ window.dash = (function () {
       <div class="td-brandrow"><button type="button" class="td-home" id="to-cover" title="표지 보기" aria-label="MLB 표지 보기"><svg class="td-logo" viewBox="-1 -1 103 30" role="img" aria-label="MLB"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M33.0854 0L21.305 12.3492L16.9811 0H8.32729V0.00583333L6.49492 0L7.59555 2.75917L1.37276 23.2167L0 28H8.68408L12.7298 14.5892L15.7233 21.5075H21.3595L28.5317 14.5892L24.486 28H33.291L41.7392 0H33.0854ZM90.941 8.45833C90.6084 9.56083 89.5017 10.7392 87.0827 10.7392H81.5977L82.9765 6.1775H88.4615C90.8745 6.1775 91.2736 7.35583 90.941 8.45833ZM88.1592 19.3492C87.8084 20.5275 86.611 21.8283 84.1921 21.8283H78.2596L79.7412 16.9108H85.6797C88.0926 16.9108 88.522 18.1708 88.1652 19.3492H88.1592ZM99.6311 8.21333C101.082 3.3775 98.3249 0 90.8805 0H74.1473L75.26 2.56667L68.5414 25.2933L65.6507 28H83.1942C89.5803 28 95.3314 27.4167 96.9461 22.0675C98.1313 18.1358 96.9521 14.805 95.7063 14.0933C96.9884 13.5042 98.6696 11.3983 99.6311 8.21333ZM49.3711 21.8633H61.5748H61.5808C61.6311 21.8371 61.623 21.8414 61.5973 21.8551C61.4687 21.9234 60.9003 22.2256 65.0339 20.0958L62.5665 27.9942H36.7804L39.5501 25.305L46.4502 2.70667L45.2951 0H55.9688L49.3711 21.8633Z"/></svg></button><span class="sep" aria-hidden="true"></span><span>MKT · 콘텐츠 트렌드 전광판</span></div>
       <h1 id="title">TREND DASHBOARD</h1>
     </div>
-    <span class="td-upd">최근 측정 <span id="latest" data-source="latest" data-field="measured" data-row="0">—</span> · 매주 월요일 업데이트</span>
+    <span class="td-upd">최근 측정 <span id="latest" data-source="latest" data-field="measured" data-row="0">—</span> · 매일 15:00 업데이트</span>
   </header>
 
   <nav class="td-tabs" role="tablist" aria-label="대시보드 탭">
@@ -319,14 +319,14 @@ window.dash = (function () {
   <section class="td-coverwrap" id="cover" role="dialog" aria-modal="true" aria-label="TREND DASHBOARD 표지" hidden>
     <div class="td-cover" id="cover-card">
       <svg class="td-seam" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="200" r="196"/><path d="M70 40 C 150 120, 150 280, 70 360"/><path class="ln" d="M70 40 C 150 120, 150 280, 70 360"/><path d="M330 40 C 250 120, 250 280, 330 360"/><path class="ln" d="M330 40 C 250 120, 250 280, 330 360"/></svg>
-      <div class="top"><svg class="td-logo" viewBox="-1 -1 103 30" role="img" aria-label="MLB"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M33.0854 0L21.305 12.3492L16.9811 0H8.32729V0.00583333L6.49492 0L7.59555 2.75917L1.37276 23.2167L0 28H8.68408L12.7298 14.5892L15.7233 21.5075H21.3595L28.5317 14.5892L24.486 28H33.291L41.7392 0H33.0854ZM90.941 8.45833C90.6084 9.56083 89.5017 10.7392 87.0827 10.7392H81.5977L82.9765 6.1775H88.4615C90.8745 6.1775 91.2736 7.35583 90.941 8.45833ZM88.1592 19.3492C87.8084 20.5275 86.611 21.8283 84.1921 21.8283H78.2596L79.7412 16.9108H85.6797C88.0926 16.9108 88.522 18.1708 88.1652 19.3492H88.1592ZM99.6311 8.21333C101.082 3.3775 98.3249 0 90.8805 0H74.1473L75.26 2.56667L68.5414 25.2933L65.6507 28H83.1942C89.5803 28 95.3314 27.4167 96.9461 22.0675C98.1313 18.1358 96.9521 14.805 95.7063 14.0933C96.9884 13.5042 98.6696 11.3983 99.6311 8.21333ZM49.3711 21.8633H61.5748H61.5808C61.6311 21.8371 61.623 21.8414 61.5973 21.8551C61.4687 21.9234 60.9003 22.2256 65.0339 20.0958L62.5665 27.9942H36.7804L39.5501 25.305L46.4502 2.70667L45.2951 0H55.9688L49.3711 21.8633Z"/></svg><span>최근 측정 <span id="cv-latest" data-source="latest" data-field="measured" data-row="0">—</span> · 매주 월요일 업데이트</span></div>
+      <div class="top"><svg class="td-logo" viewBox="-1 -1 103 30" role="img" aria-label="MLB"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M33.0854 0L21.305 12.3492L16.9811 0H8.32729V0.00583333L6.49492 0L7.59555 2.75917L1.37276 23.2167L0 28H8.68408L12.7298 14.5892L15.7233 21.5075H21.3595L28.5317 14.5892L24.486 28H33.291L41.7392 0H33.0854ZM90.941 8.45833C90.6084 9.56083 89.5017 10.7392 87.0827 10.7392H81.5977L82.9765 6.1775H88.4615C90.8745 6.1775 91.2736 7.35583 90.941 8.45833ZM88.1592 19.3492C87.8084 20.5275 86.611 21.8283 84.1921 21.8283H78.2596L79.7412 16.9108H85.6797C88.0926 16.9108 88.522 18.1708 88.1652 19.3492H88.1592ZM99.6311 8.21333C101.082 3.3775 98.3249 0 90.8805 0H74.1473L75.26 2.56667L68.5414 25.2933L65.6507 28H83.1942C89.5803 28 95.3314 27.4167 96.9461 22.0675C98.1313 18.1358 96.9521 14.805 95.7063 14.0933C96.9884 13.5042 98.6696 11.3983 99.6311 8.21333ZM49.3711 21.8633H61.5748H61.5808C61.6311 21.8371 61.623 21.8414 61.5973 21.8551C61.4687 21.9234 60.9003 22.2256 65.0339 20.0958L62.5665 27.9942H36.7804L39.5501 25.305L46.4502 2.70667L45.2951 0H55.9688L49.3711 21.8633Z"/></svg><span>최근 측정 <span id="cv-latest" data-source="latest" data-field="measured" data-row="0">—</span> · 매일 15:00 업데이트</span></div>
       <div class="hero">
         <h2>TREND DASHBOARD</h2>
         <p class="lede">수집한 트렌드 키워드를 <b>인스타그램 실제 콘텐츠</b>로 분석해 진짜 트렌드인지 검증하고, <b>MLB가 쓸 수 있는 트렌드</b>를 남보다 먼저 발굴합니다.</p>
         <div class="td-cta"><button type="button" class="pri" data-go="trend-rank">대시보드 들어가기</button></div>
       </div>
       <div style="display:grid;gap:14px">
-        <div class="picks-h"><h3>이번 주 먼저 탈 트렌드</h3><span>유행 초기 중 최근 14일 게시 비중이 높은 순 · 누르면 상세</span></div>
+        <div class="picks-h"><h3>지금 먼저 탈 트렌드</h3><span>유행 초기 중 최근 14일 게시 비중이 높은 순 · 누르면 상세</span></div>
         <div class="td-picks" id="cv-picks" data-source="trends"></div>
       </div>
       <div class="foot"><span>F&amp;F MLB 마케팅 · 2026 인턴십 개인 과제 · 채승룡</span><span>데이터: 트렌드 매체·SNS 키워드 + 인스타그램 키워드 검색 상위 게시물</span></div>
@@ -413,7 +413,7 @@ window.dash = (function () {
   <section class="td-page" id="analysis-logic" role="tabpanel" aria-labelledby="tab-analysis-logic" hidden>
     <div class="td-card">
       <h2>키워드 수집부터 자동 업데이트까지, 5단계</h2>
-      <p class="td-note">매체 트렌드를 그대로 쓰지 않고, 실제 소비자 게시물로 검증합니다. 매주 새 키워드를 찾아 측정 조건을 통과하면 같은 기준으로 점수·순위를 매겨 추가하고, 전체 유행 단계를 다시 측정합니다(각 단계 카드의 기준일 참고).</p>
+      <p class="td-note">매체 트렌드를 그대로 쓰지 않고, 실제 소비자 게시물로 검증합니다. 매일 새 키워드를 찾아 인스타에서 측정하고, 측정 조건을 통과하면 같은 기준으로 점수·순위·유행 단계를 매겨 추가합니다. 전체 트렌드의 유행 단계도 다시 측정합니다(각 단계 카드의 기준일 참고).</p>
       <div class="td-flow" id="flow" data-source="pipeline"></div>
     </div>
     <div class="td-two">
@@ -436,13 +436,13 @@ window.dash = (function () {
       </div>
     </div>
     <div class="td-card">
-      <h2>자동화 — 매주 월요일 다시 측정해 대시보드를 갱신</h2>
-      <p class="td-note">같은 로직을 정해진 주기로 반복하고, 매번 측정치를 비교해 막 뜨는 트렌드를 먼저 잡습니다.</p>
+      <h2>자동화 — 매일 15:00 업데이트</h2>
+      <p class="td-note">매일 같은 로직으로 새 키워드를 찾아 측정해 반영하고, 측정치를 비교해 막 뜨는 트렌드를 먼저 잡습니다.</p>
       <div class="td-loop">
-        <div><b>자동 실행</b>매주 월요일 13:41, 크롬이 켜진 PC에서 Claude 예약 작업으로 시작</div>
-        <div><b>수집·분석</b>캐릿 전광판·아티클과 고구마팜에서 새 키워드 수집 → 인스타 실측 → 측정 조건 통과 시 점수·순위에 추가. 검색 결과 화면의 게시물 데이터를 읽어 키워드당 요청 1회로 수집</div>
+        <div><b>자동 실행</b>매일 13:21, 크롬이 켜진 PC에서 Claude 예약 작업으로 시작(PC가 꺼져 있으면 그날은 건너뜀)</div>
+        <div><b>매일 · 수집·분석</b>캐릿 전광판·아티클과 고구마팜에서 새 키워드 수집 → 기존 풀과 중복 제거 → 인스타 실측 → 측정 조건 통과 시 점수·순위·유행 단계를 매겨 추가. 검색 결과 화면의 게시물 데이터를 읽어 키워드당 요청 1회로 수집</div>
         <div><b>단계 판정</b>최근 14일·30일 게시 비중, 지난 측정 대비 증가분</div>
-        <div><b>대시보드 갱신</b>대시보드·휴대폰 알림 후 15:00 GitHub 링크에 자동 반영</div>
+        <div><b>대시보드 갱신</b>매일 15:00까지 대시보드 반영, 15:00 GitHub 링크에 자동 반영</div>
       </div>
     </div>
   </section>
@@ -567,12 +567,13 @@ window.TD = (function () {
   const coverEl = document.getElementById('cover');
   function openCover() {
     coverOpen = true; coverEl.classList.remove('leaving'); coverEl.hidden = false; coverEl.scrollTop = 0;
+    dash.setLink('cover');
     if (!introDone) { introDone = true; const c = document.getElementById('cover-card'); c.classList.add('intro'); setTimeout(() => c.classList.remove('intro'), 2200); }
     draw(); setTimeout(() => { const b = coverEl.querySelector('.td-cta .pri'); if (b) b.focus({preventScroll: true}); }, 50);
   }
   function closeCover(then) {
     if (!coverOpen) { if (then) then(); return; }
-    coverOpen = false; if (then) then();
+    coverOpen = false; dash.setLink(current); if (then) then();
     const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) { coverEl.hidden = true; return; }
     coverEl.classList.add('leaving'); setTimeout(() => { coverEl.hidden = true; coverEl.classList.remove('leaving'); }, 620);
@@ -875,7 +876,7 @@ window.TD = (function () {
   dash.onData(draw);
   const h = location.hash.slice(1);
   show(pages.includes(h) ? h : 'trend-rank');
-  if (!pages.includes(h)) openCover();
+  openCover();
 })();
 </script>
 

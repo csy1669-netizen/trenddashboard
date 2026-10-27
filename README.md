@@ -3,7 +3,7 @@
 MLB MKT 콘텐츠 트렌드 전광판. 수집한 트렌드 키워드를 인스타그램 실제 콘텐츠로 분석해 유행 단계(유행 초기 · 유행 중 · 유행 지남)를 판정합니다.
 
 - 화면: `index.html` (표지 → TREND RANK · FORMAT RANK · TREND KEYWORD · ANALYSIS LOGIC)
-- 데이터: `data/trends.json`(트렌드 332개) · `data/formats.json`(포맷 13종) · `data/pipeline.json`(분석 5단계)
+- 데이터: `data/trends.json`(트렌드 360개, 매일 갱신) · `data/formats.json`(포맷 13종) · `data/pipeline.json`(분석 5단계)
 - 화면은 열 때마다 `data/*.json`을 새로 읽습니다. **데이터 파일만 바꾸면 화면이 바뀝니다.**
 
 ## GitHub Pages로 링크 만들기 (처음 한 번)
@@ -16,10 +16,13 @@ MLB MKT 콘텐츠 트렌드 전광판. 수집한 트렌드 키워드를 인스�
 > ⚠️ 무료 GitHub의 Pages 링크는 **누구나 볼 수 있는 공개 페이지**입니다. 사내 자료·인스타 계정명이 들어 있으니,
 > 회사 GitHub(Enterprise, 비공개 Pages) 또는 팀 내부 공유용 링크인지 먼저 확인하세요.
 
-## 주 1회 업데이트
-1. 크롬(인스타그램 로그인) → `scripts/collector.js`로 키워드 검색 측정 → `raw_YYYYMMDD.json` 저장
-2. `python scripts/build_trends.py raw_YYYYMMDD.json` → `data/trends.json` 갱신 (지난 단계는 `prev_stage`로 보존)
-3. 바뀐 `data/trends.json`을 저장소에 다시 올리기 (Upload files 또는 `git push`)
+## 자동 업데이트 (매일 15:00)
+- **매일 13:21** Claude 예약 작업이 시작합니다(크롬이 켜진 PC 필요).
+  1. 캐릿 전광판·아티클, 고구마팜에서 새 트렌드 키워드 탐색 → 키워드 풀과 중복 제거
+  2. 신규 후보만 인스타 검색 상위 24개로 측정 → 측정 조건(게시물 12↑ · 계정 8↑ · 캡션 일치 25%↑) 통과 시 점수·순위·유행 단계를 매겨 추가
+  3. `scripts/weekly_update.py`로 계산 → 대시보드와 `data/*.json` 갱신
+- **매주 월요일**(월요일에 PC가 꺼져 있었으면 다음 실행일)에는 전체 트렌드의 유행 단계를 다시 측정합니다. 인스타 과부하를 막기 위해 다른 날은 신규 후보만 검색합니다.
+- **매일 15:00** PC가 바뀐 `data/*.json`을 GitHub에 push → 링크에 자동 반영
 
 ## 판정 규칙
 | 단계 | 기준 |
