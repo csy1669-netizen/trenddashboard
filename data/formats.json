@@ -25,14 +25,24 @@
   "format_rank": 3,
   "score": 7.32,
   "trends": 10,
-  "in_top30": 4,
+  "in_top30": 3,
   "in_top100": 5,
   "top_trends": "핏 체크(fit check) · 아웃핏 체크(outfit check) · 개강룩"
  },
  {
+  "format": "유행어·밈",
+  "category": "콘텐츠·챌린지",
+  "format_rank": 4,
+  "score": 7.21,
+  "trends": 26,
+  "in_top30": 2,
+  "in_top100": 6,
+  "top_trends": "거제 야호 · 체포하겠어 · 밤티"
+ },
+ {
   "format": "아이돌·팬덤",
   "category": "엔터·브랜드·디지털",
-  "format_rank": 4,
+  "format_rank": 5,
   "score": 7.19,
   "trends": 18,
   "in_top30": 3,
@@ -42,7 +52,7 @@
  {
   "format": "패러디·상황극 영상",
   "category": "콘텐츠·챌린지",
-  "format_rank": 5,
+  "format_rank": 6,
   "score": 7.03,
   "trends": 28,
   "in_top30": 2,
@@ -50,21 +60,11 @@
   "top_trends": "아이찡 이모지 밈 · 시험지 망토 릴스 · 영원할 건가 보다 릴스"
  },
  {
-  "format": "유행어·밈",
-  "category": "콘텐츠·챌린지",
-  "format_rank": 6,
-  "score": 7.01,
-  "trends": 22,
-  "in_top30": 1,
-  "in_top100": 5,
-  "top_trends": "거제 야호 · 밤티 · 영크크"
- },
- {
   "format": "장소·체험·라이프스타일",
   "category": "캐릭터·푸드·라이프",
   "format_rank": 7,
   "score": 6.98,
-  "trends": 44,
+  "trends": 47,
   "in_top30": 1,
   "in_top100": 7,
   "top_trends": "젠더리빌 파티 · 노들섬 · 탐조"
@@ -74,7 +74,7 @@
   "category": "캐릭터·푸드·라이프",
   "format_rank": 8,
   "score": 6.95,
-  "trends": 43,
+  "trends": 46,
   "in_top30": 0,
   "in_top100": 11,
   "top_trends": "말차 · 불닭 오믈렛 · 불닭 냉면"
@@ -96,7 +96,7 @@
   "score": 6.94,
   "trends": 15,
   "in_top30": 1,
-  "in_top100": 6,
+  "in_top100": 5,
   "top_trends": "인생네컷 · film dump · 셋로그"
  },
  {
@@ -114,7 +114,7 @@
   "category": "엔터·브랜드·디지털",
   "format_rank": 12,
   "score": 6.66,
-  "trends": 23,
+  "trends": 24,
   "in_top30": 1,
   "in_top100": 3,
   "top_trends": "이달의 브랜드 — 민음사 · 테슬라 로드스터 비행 · 넷플잔치"
@@ -124,7 +124,7 @@
   "category": "패션·뷰티",
   "format_rank": 13,
   "score": 6.43,
-  "trends": 21,
+  "trends": 22,
   "in_top30": 0,
   "in_top100": 2,
   "top_trends": "퍼플 코어 · 레몬코어 · 스카프 코디"

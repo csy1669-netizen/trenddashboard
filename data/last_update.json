@@ -1,17 +1,17 @@
 {
- "measured": "2026-10-27",
- "trends": 360,
- "scored": 360,
- "pool": 3195,
- "new_candidates": 11,
- "new_added": 4,
+ "measured": "2026-10-28",
+ "trends": 372,
+ "scored": 372,
+ "pool": 3210,
+ "new_candidates": 15,
+ "new_added": 12,
  "stages": {
-  "유행 지남": 235,
+  "유행 지남": 245,
   "유행 중": 42,
-  "유행 초기": 23,
-  "측정 불충분": 60
+  "유행 초기": 24,
+  "측정 불충분": 61
  },
- "discovered_until": "2026-10-27",
+ "discovered_until": "2026-10-28",
  "full_measured": "2026-10-26",
  "by": "Claude (매일 예약 측정)"
 }
